@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>My Courses</span>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search courses & lessons...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="source-tabs">
+                    <button class="source-tab active" data-source="local" id="localTab">
+                        <i class="fas fa-folder"></i> Local
+                    </button>
+                    <button class="source-tab" data-source="url" id="urlTab">
+                        <i class="fas fa-link"></i> URL
+                    </button>
+                </div>
+            </div>
+            <div class="course-list" id="courseList">
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No courses loaded yet</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="breadcrumb" id="breadcrumb">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-icon" id="addUrlBtn" title="Add from URL">
+                        <i class="fas fa-link"></i>
+                    </button>
+                    <button class="btn-primary" id="loadFolderBtn">
+                        <i class="fas fa-folder-open"></i>
+                        <span class="btn-text">Load Courses</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area" id="contentArea">
+                <div class="welcome-screen">
+                    <div class="welcome-icon">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <h2>Welcome to Your Learning Space</h2>
+                    <p>Start your journey by loading courses from your computer or adding content from the web. Study at your own pace with our comfortable and distraction-free interface.</p>
+                    <div class="welcome-actions">
+                        <button class="btn-primary" onclick="document.getElementById('loadFolderBtn').click()">
+                            <i class="fas fa-folder-open"></i>
+                            Load Local Courses
+                        </button>
+                        <button class="btn-secondary" onclick="document.getElementById('addUrlBtn').click()">
+                            <i class="fas fa-link"></i>
+                            Add from URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="urlModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Course from URL</h3>
+                <button class="close-modal" onclick="closeUrlModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Course Title</label>
+                <input type="text" class="form-input" id="courseTitle" placeholder="e.g., Web Development Course">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Video/Audio URL</label>
+                <input type="url" class="form-input" id="courseUrl" placeholder="https://example.com/video.mp4">
+                <p class="form-help">Supports: MP4, WebM, MP3, OGG, WAV, YouTube, Google Drive (public), Dropbox</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category (Optional)</label>
+                <input type="text" class="form-input" id="courseCategory" placeholder="e.g., Programming">
+            </div>
+            <button class="btn-primary" onclick="addUrlCourse()" style="width: 100%; justify-content: center;">
+                <i class="fas fa-plus"></i>
+                Add Course
+            </button>
+        </div>
+    </div>
+    
+    <div class="modal" id="messageModal">
+        <div class="modal-content">
+            <div class="modal-header" style="justify-content: flex-start; gap: 16px;">
+                <i id="modalIcon" class="fas fa-info-circle" style="color: var(--accent-color); font-size: 28px;"></i>
+                <h3 id="modalTitle">Alert</h3>
+                <button class="close-modal" onclick="hideMessageModal()" style="margin-left: auto;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p id="modalMessage" style="margin-bottom: 24px; color: var(--text-secondary);"></p>
+            <div id="modalActions" style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="note-btn cancel" id="modalCancelBtn" onclick="hideMessageModal()">Cancel</button>
+                <button class="note-btn" id="modalConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            courses: [],
+            urlCourses: [],
+            currentLesson: null,
+            currentSource: 'local',
+            directoryHandle: null,
+            progress: {},
+            notes: {},
+            playbackSpeed: 1,
+            volume: 1,
+            init() {
+                this.loadFromStorage();
+            },
+            loadFromStorage() {
+                // IMPORTANT: Using localStorage as requested, but for persistence in a real app, use Firestore or another database.
+                const saved = localStorage.getItem('coursePlayerState');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    this.progress = data.progress || {};
+                    this.notes = data.notes || {};
+                    this.playbackSpeed = data.playbackSpeed || 1;
+                    this.volume = data.volume || 1;
+                    this.urlCourses = data.urlCourses || [];
+                    
+                    if (data.directoryHandleName) {
+                        this.restoreDirectoryAccess(data.directoryHandleName);
+                    }
+
+                    if (this.urlCourses.length > 0) {
+                        renderUrlCourses();
+                    }
+                }
+            },
+            async restoreDirectoryAccess(name) {
+                const handles = await this.getStoredHandles();
+                const handle = handles.find(h => h.name === name);
+                if (handle) {
+                    try {
+                        const permission = await handle.handle.queryPermission({ mode: 'read' });
+                        if (permission === 'granted' || permission === 'prompt') {
+                            this.directoryHandle = handle.handle;
+                            await this.loadCoursesFromHandle();
+                        }
+                    } catch (err) {
+                        console.log('Could not restore access:', err);
+                    }
+                }
+            },
+            async getStoredHandles() {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open('CoursePlayerDB', 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('handles')) {
+                            db.createObjectStore('handles', { keyPath: 'name' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const transaction = db.transaction(['handles'], 'readonly');
+                        const store = transaction.objectStore('handles');
+                        const getAll = store.getAll();
+                        getAll.onsuccess = () => resolve(getAll.result || []);
+                    };
+                    request.onerror = () => resolve([]);
+                });
+            },
+            async saveDirectoryHandle(handle) {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open('CoursePlayerDB', 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('handles')) {
+                            db.createObjectStore('handles', { keyPath: 'name' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const transaction = db.transaction(['handles'], 'readwrite');
+                        const store = transaction.objectStore('handles');
+                        store.put({ name: handle.name, handle: handle });
+                        transaction.oncomplete = () => resolve();
+                    };
+                });
+            },
+            async loadCoursesFromHandle() {
+                if (!this.directoryHandle) return;
+                const courses = await scanDirectory(this.directoryHandle);
+                this.courses = courses;
+                renderLocalCourses();
+            },
+            save() {
+                const data = {
+                    progress: this.progress,
+                    notes: this.notes,
+                    playbackSpeed: this.playbackSpeed,
+                    volume: this.volume,
+                    directoryHandleName: this.directoryHandle?.name,
+                    urlCourses: this.urlCourses
+                };
+                localStorage.setItem('coursePlayerState', JSON.stringify(data));
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            state.init();
+            initializeEventListeners();
+        });
+
+        function initializeEventListeners() {
+            document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+            document.getElementById('loadFolderBtn').addEventListener('click', loadLocalFolder);
+            document.getElementById('addUrlBtn').addEventListener('click', openUrlModal);
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            document.getElementById('localTab').addEventListener('click', () => switchSource('local'));
+            document.getElementById('urlTab').addEventListener('click', () => switchSource('url'));
+            document.getElementById('overlay').addEventListener('click', () => {
+                closeSidebar();
+                closeUrlModal();
+                hideMessageModal();
+            });
+        }
+
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const toggleBtn = document.getElementById('menuToggle');
+            const icon = toggleBtn.querySelector('i');
+
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            
+            // Toggle the icon for mobile view
+            if (sidebar.classList.contains('active')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const toggleBtn = document.getElementById('menuToggle');
+
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+
+            if (toggleBtn) {
+                const icon = toggleBtn.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function switchSource(source) {
+            state.currentSource = source;
+            document.querySelectorAll('.source-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.source === source);
+            });
+
+            if (source === 'local') {
+                renderLocalCourses();
+            } else {
+                renderUrlCourses();
+            }
+        }
+
+        async function loadLocalFolder() {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                state.directoryHandle = dirHandle;
+                await state.saveDirectoryHandle(dirHandle);
+                const courses = await scanDirectory(dirHandle);
+                state.courses = courses;
+                switchSource('local');
+                renderLocalCourses();
+                state.save();
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    // Replaced native alert()
+                    showMessageModal({
+                        title: 'Loading Error',
+                        message: 'Error loading folder. Please ensure read permissions are granted and try again. This feature requires Chrome/Edge.',
+                        iconClass: 'fa-exclamation-triangle'
+                    });
+                }
+            }
+        }
+
+        async function scanDirectory(dirHandle, path = '') {
+            const courses = [];
+            const lessons = [];
+            const videoAudioExtensions = ['mp4', 'mp3', 'pdf', 'webm', 'mkv', 'avi', 'mov', 'ogg', 'wav'];
+
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'directory') {
+                    // Recursively scan subdirectories for nested modules/courses
+                    const subLessonsOrModules = await scanDirectory(entry, `${path}/${entry.name}`);
+                    if (subLessonsOrModules.length > 0) {
+                        const isModule = subLessonsOrModules.every(item => item.lessons);
+                        
+                        // Decide if the directory is a Course (containing modules/files) or just a Module (containing files)
+                        courses.push({
+                            name: entry.name,
+                            path: `${path}/${entry.name}`,
+                            lessons: isModule ? subLessonsOrModules : subLessonsOrModules.map(lesson => ({
+                                ...lesson,
+                                name: `${entry.name}: ${lesson.name}`, // Prefix lesson name for clarity
+                                path: `${path}/${entry.name}/${lesson.file.name}`
+                            })),
+                            handle: entry
+                        });
+                    }
+                } else if (entry.kind === 'file') {
+                    const ext = entry.name.split('.').pop().toLowerCase();
+                    if (videoAudioExtensions.includes(ext)) {
+                        lessons.push({
+                            name: entry.name.replace(/\.[^/.]+$/, ""),
+                            type: getFileType(ext),
+                            file: entry,
+                            path: `${path}/${entry.name}`,
+                            extension: ext,
+                            source: 'local'
+                        });
+                    }
+                }
+            }
+
+            // If the current directory contains files (lessons) AND no sub-directories were treated as courses, return the lessons.
+            // Otherwise, return the nested courses.
+            return courses.length > 0 ? courses : lessons;
+        }
+
+
+        function getFileType(ext) {
+            if (['mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext)) return 'video';
+            if (['mp3', 'wav', 'ogg'].includes(ext)) return 'audio';
+            if (ext === 'pdf') return 'pdf';
+            return 'unknown';
+        }
+
+        function renderLocalCourses() {
+            const courseList = document.getElementById('courseList');
+            
+            if (state.courses.length === 0) {
+                courseList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No local courses loaded</p>
+                        <button class="btn-secondary" onclick="loadLocalFolder()" style="margin-top: 12px;">
+                            <i class="fas fa-folder-open"></i>
+                            Load Courses
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            courseList.innerHTML = '';
+            state.courses.forEach((course) => {
+                const courseEl = createCourseElement(course);
+                courseList.appendChild(courseEl);
+            });
+        }
+
+        function renderUrlCourses() {
+            const courseList = document.getElementById('courseList');
+            
+            if (state.urlCourses.length === 0) {
+                courseList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-link"></i>
+                        <p>No URL courses added. Add videos, audio, or online presentations.</p>
+                        <button class="btn-secondary" onclick="openUrlModal()" style="margin-top: 12px;">
+                            <i class="fas fa-plus"></i>
+                            Add Course
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            courseList.innerHTML = '';
+            state.urlCourses.forEach((course, index) => {
+                const courseEl = createUrlCourseElement(course, index);
+                courseList.appendChild(courseEl);
+            });
+        }
+
+        function createCourseElement(course) {
+            const div = document.createElement('div');
+            div.className = 'course-item';
+
+            // Flatten nested structure to count all lessons
+            const allLessons = [];
+            const collectLessons = (lessons) => {
+                lessons.forEach(item => {
+                    if (item.file) {
+                        allLessons.push(item);
+                    } else if (item.lessons) {
+                        collectLessons(item.lessons);
+                    }
+                });
+            };
+            collectLessons(course.lessons);
+            const totalLessons = allLessons.length;
+
+
+            const header = document.createElement('div');
+            header.className = 'course-header';
+            header.innerHTML = `
+                <div class="course-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="course-info">
+                    <div class="course-title">${course.name}</div>
+                    <div class="course-meta">${totalLessons} lessons</div>
+                </div>
+                <i class="fas fa-chevron-right course-expand"></i>
+            `;
+
+            const lessonList = document.createElement('div');
+            lessonList.className = 'lesson-list';
+
+            // Function to recursively render modules and lessons
+            const renderLessons = (lessons) => {
+                lessons.forEach(item => {
+                    if (item.file) {
+                        lessonList.appendChild(createLessonElement(item));
+                    } else if (item.lessons) {
+                        const moduleHeader = document.createElement('div');
+                        moduleHeader.style.cssText = 'padding: 8px 16px; margin: 8px 0 4px; font-weight: 600; font-size: 13px; color: var(--accent-color); border-top: 1px solid var(--border-color);';
+                        moduleHeader.textContent = item.name;
+                        lessonList.appendChild(moduleHeader);
+                        renderLessons(item.lessons); // Recurse for nested lessons
+                    }
+                });
+            };
+            
+            renderLessons(course.lessons);
+
+            header.onclick = () => {
+                lessonList.classList.toggle('expanded');
+                header.querySelector('.course-expand').classList.toggle('expanded');
+            };
+
+            div.appendChild(header);
+            div.appendChild(lessonList);
+            return div;
+        }
+
+        function createUrlCourseElement(course, index) {
+            const div = document.createElement('div');
+            div.className = 'course-item';
+
+            const header = document.createElement('div');
+            header.className = 'course-header';
+            header.innerHTML = `
+                <div class="course-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="course-info">
+                    <div class="course-title">${course.title}</div>
+                    <div class="course-meta">${course.category || 'Online Content'}</div>
+                </div>
+                <button class="note-delete" onclick="event.stopPropagation(); deleteUrlCourse(${index})" title="Remove Course" style="margin-left: auto;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+
+            header.onclick = () => {
+                loadUrlLesson(course);
+                if (window.innerWidth <= 1024) closeSidebar();
+            };
+
+            div.appendChild(header);
+            return div;
+        }
+
+        function createLessonElement(lesson) {
+            const div = document.createElement('div');
+            div.className = 'lesson-item';
+            
+            const icon = lesson.type === 'video' ? 'fa-play-circle' : 
+                         lesson.type === 'audio' ? 'fa-music' : 'fa-file-pdf';
+            
+            const isCompleted = state.progress[lesson.path] >= 90;
+            if (isCompleted) div.classList.add('completed');
+
+            div.innerHTML = `
+                <i class="fas ${isCompleted ? 'fa-check-circle' : icon}"></i>
+                <span>${lesson.name}</span>
+            `;
+
+            div.onclick = () => {
+                loadLesson(lesson, div);
+                if (window.innerWidth <= 1024) closeSidebar();
+            };
+            return div;
+        }
+
+        async function loadLesson(lesson, element) {
+            state.currentLesson = lesson;
+            
+            document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            document.getElementById('breadcrumb').innerHTML = `
+                <i class="fas fa-play-circle"></i>
+                <span>${lesson.name}</span>
+            `;
+
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = '';
+
+            if (lesson.type === 'video' || lesson.type === 'audio') {
+                const file = await lesson.file.getFile();
+                const url = URL.createObjectURL(file);
+                contentArea.innerHTML = createMediaPlayer(url, lesson);
+                initializeMediaPlayer();
+            } else if (lesson.type === 'pdf') {
+                const file = await lesson.file.getFile();
+                const url = URL.createObjectURL(file);
+                contentArea.innerHTML = `
+                    <div class="player-container">
+                        <div class="video-info">
+                            <h1 class="video-title">${lesson.name}</h1>
+                            <div class="video-meta">
+                                <span><i class="fas fa-file-pdf"></i> PDF Document</span>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-secondary); border-radius: 16px; padding: 24px;">
+                            <iframe src="${url}" style="width: 100%; height: 800px; border: none; border-radius: 12px;"></iframe>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const notesHtml = createNotesSection(lesson);
+            contentArea.insertAdjacentHTML('beforeend', notesHtml);
+        }
+
+        function loadUrlLesson(course) {
+            // Note: URL courses are treated as a single lesson/media file.
+            state.currentLesson = {
+                name: course.title,
+                type: course.url.match(/\.(mp3|wav|ogg)$/i) ? 'audio' : 'video',
+                url: course.url,
+                path: course.url, // URL used as unique path key
+                source: 'url'
+            };
+
+            document.getElementById('breadcrumb').innerHTML = `
+                <i class="fas fa-globe"></i>
+                <span>${course.title}</span>
+            `;
+
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = createMediaPlayer(processUrl(course.url), state.currentLesson);
+            initializeMediaPlayer();
+
+            const notesHtml = createNotesSection(state.currentLesson);
+            contentArea.insertAdjacentHTML('beforeend', notesHtml);
+        }
+
+        function processUrl(url) {
+            // Check for common embeddable/direct link services
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                const videoId = url.includes('youtu.be') 
+                    ? url.split('/').pop().split('?')[0]
+                    : new URLSearchParams(new URL(url).search).get('v');
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+            
+            if (url.includes('drive.google.com')) {
+                const fileId = url.match(/\/d\/([^/]+)/)?.[1] || url.match(/id=([^&]+)/)?.[1];
+                return `https://drive.google.com/file/d/${fileId}/preview`;
+            }
+            
+            if (url.includes('dropbox.com')) {
+                return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
+            }
+
+            return url;
+        }
+
+        function createMediaPlayer(url, lesson) {
+            const isEmbed = url.includes('youtube.com/embed') || url.includes('drive.google.com/file');
+            
+            if (isEmbed) {
+                return `
+                    <div class="player-container">
+                        <div class="video-info">
+                            <h1 class="video-title">${lesson.name}</h1>
+                            <div class="video-meta">
+                                <span><i class="fas fa-globe"></i> Online Content (Embedded)</span>
+                            </div>
+                            <div class="video-actions">
+                                <span class="action-btn" style="cursor: default; opacity: 0.8;">
+                                    <i class="fas fa-info-circle"></i> Custom controls unavailable for embeds.
+                                </span>
+                            </div>
+                        </div>
+                        <div class="video-wrapper" id="videoWrapper">
+                            <div style="position: relative; width: 100%; padding-top: 56.25%;"> 
+                                <iframe 
+                                    src="${url}" 
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 16px;" 
+                                    allow="autoplay; fullscreen; picture-in-picture" 
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="player-container">
+                    <div class="video-wrapper" id="videoWrapper">
+                        <${lesson.type === 'audio' ? 'audio' : 'video'} id="videoPlayer" src="${url}" style="width: 100%; max-height: 70vh; ${lesson.type === 'audio' ? 'display: block; width: 80%; margin: 20px auto;' : ''}"></${lesson.type === 'audio' ? 'audio' : 'video'}>
+                        
+                        <div class="video-controls" id="videoControls">
+                            <div class="progress-container" id="progressContainer">
+                                <div class="buffered-bar" id="bufferedBar"></div>
+                                <div class="progress-bar" id="progressBar"></div>
+                            </div>
+                            <div class="controls-bottom">
+                                <button class="control-btn play-btn" id="playBtn" title="Play/Pause (Space/K)">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="control-btn" id="skipBack" title="Skip Back 10s (Left Arrow/J)">
+                                    <i class="fas fa-rotate-left"></i>
+                                </button>
+                                <button class="control-btn" id="skipForward" title="Skip Forward 10s (Right Arrow/L)">
+                                    <i class="fas fa-rotate-right"></i>
+                                </button>
+                                <div class="volume-container">
+                                    <button class="control-btn" id="volumeBtn" title="Mute (M)">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100" title="Volume">
+                                </div>
+                                <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                                <div class="spacer"></div>
+                                <div class="settings-menu">
+                                    <button class="control-btn" id="settingsBtn" title="Settings">
+                                        <i class="fas fa-gear"></i>
+                                    </button>
+                                    <div class="settings-panel" id="settingsPanel">
+                                        <div class="settings-item" id="speedItem">
+                                            <span>Playback Speed</span>
+                                            <span id="currentSpeed">${state.playbackSpeed === 1 ? 'Normal' : state.playbackSpeed + 'x'}</span>
+                                        </div>
+                                        <div class="settings-submenu" id="speedSubmenu">
+                                            <div class="settings-item speed-option" data-speed="0.25">0.25x</div>
+                                            <div class="settings-item speed-option" data-speed="0.5">0.5x</div>
+                                            <div class="settings-item speed-option" data-speed="0.75">0.75x</div>
+                                            <div class="settings-item speed-option ${state.playbackSpeed === 1 ? 'active' : ''}" data-speed="1">Normal</div>
+                                            <div class="settings-item speed-option" data-speed="1.25">1.25x</div>
+                                            <div class="settings-item speed-option" data-speed="1.5">1.5x</div>
+                                            <div class="settings-item speed-option" data-speed="1.75">1.75x</div>
+                                            <div class="settings-item speed-option" data-speed="2">2x</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="control-btn" id="pipBtn" title="Picture in Picture">
+                                    <i class="fas fa-tv"></i>
+                                </button>
+                                <button class="control-btn" id="fullscreenBtn" title="Fullscreen (F)">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    ${createVideoInfo(lesson)}
+                </div>
+            `;
+        }
+
+        function createVideoInfo(lesson) {
+            return `
+                <div class="video-info">
+                    <h1 class="video-title">${lesson.name}</h1>
+                    <div class="video-meta">
+                        <span><i class="fas fa-${lesson.type === 'video' ? 'play-circle' : 'music'}"></i> ${lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)}</span>
+                        <span><i class="fas fa-eye"></i> ${state.progress[lesson.path] ? Math.round(state.progress[lesson.path]) + '% completed' : 'Not started'}</span>
+                        ${lesson.source === 'url' ? `<span><i class="fas fa-globe"></i> Online Content (${lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)})</span>` : ''}
+                    </div>
+                    <div class="video-actions">
+                        <button class="action-btn ${state.progress[lesson.path] >= 90 ? 'active' : ''}" id="markCompleteBtn">
+                            <i class="fas fa-check-circle"></i>
+                            ${state.progress[lesson.path] >= 90 ? 'Completed' : 'Mark Complete'}
+                        </button>
+                        <button class="action-btn" id="addNoteBtn">
+                            <i class="fas fa-note-sticky"></i>
+                            Add Note
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initializeMediaPlayer() {
+            const video = document.getElementById('videoPlayer');
+            if (!video) return;
+
+            const videoWrapper = document.getElementById('videoWrapper');
+            const controls = document.getElementById('videoControls');
+            const playBtn = document.getElementById('playBtn');
+            const skipBack = document.getElementById('skipBack');
+            const skipForward = document.getElementById('skipForward');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const bufferedBar = document.getElementById('bufferedBar');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const volumeBtn = document.getElementById('volumeBtn');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsPanel = document.getElementById('settingsPanel');
+            const speedItem = document.getElementById('speedItem');
+            const speedSubmenu = document.getElementById('speedSubmenu');
+            const pipBtn = document.getElementById('pipBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const markCompleteBtn = document.getElementById('markCompleteBtn');
+            const addNoteBtn = document.getElementById('addNoteBtn');
+
+            let hideControlsTimeout;
+
+            video.volume = state.volume;
+            volumeSlider.value = state.volume * 100;
+            video.playbackRate = state.playbackSpeed;
+            updateVolumeIcon();
+
+            if (state.progress[state.currentLesson.path]) {
+                video.addEventListener('loadedmetadata', () => {
+                    video.currentTime = (state.progress[state.currentLesson.path] / 100) * video.duration;
+                });
+            }
+
+            function togglePlay() {
+                if (video.paused) {
+                    video.play();
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                } else {
+                    video.pause();
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            }
+
+            playBtn.onclick = togglePlay;
+            video.onclick = togglePlay;
+
+            skipBack.onclick = () => video.currentTime = Math.max(0, video.currentTime - 10);
+            skipForward.onclick = () => video.currentTime = Math.min(video.duration, video.currentTime + 10);
+
+            video.ontimeupdate = () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                progressBar.style.width = progress + '%';
+                timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+                
+                state.progress[state.currentLesson.path] = progress;
+                // Save progress every 5% change or when paused/stopped
+                if (Math.floor(progress) % 5 === 0) {
+                     state.save();
+                }
+
+                if (progress >= 90 && markCompleteBtn && !markCompleteBtn.classList.contains('active')) {
+                    markCompleteBtn.classList.add('active');
+                    markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                }
+            };
+
+            video.onprogress = () => {
+                if (video.buffered.length > 0) {
+                    const buffered = (video.buffered.end(video.buffered.length - 1) / video.duration) * 100;
+                    bufferedBar.style.width = buffered + '%';
+                }
+            };
+
+            progressContainer.onclick = (e) => {
+                const rect = progressContainer.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                video.currentTime = percent * video.duration;
+            };
+
+            volumeBtn.onclick = () => {
+                video.muted = !video.muted;
+                updateVolumeIcon();
+            };
+
+            volumeSlider.oninput = () => {
+                video.volume = volumeSlider.value / 100;
+                video.muted = false;
+                state.volume = video.volume;
+                state.save();
+                updateVolumeIcon();
+            };
+
+            function updateVolumeIcon() {
+                const icon = volumeBtn.querySelector('i');
+                if (video.muted || video.volume === 0) {
+                    icon.className = 'fas fa-volume-xmark';
+                } else if (video.volume < 0.5) {
+                    icon.className = 'fas fa-volume-low';
+                } else {
+                    icon.className = 'fas fa-volume-high';
+                }
+            }
+
+            settingsBtn.onclick = (e) => {
+                e.stopPropagation();
+                settingsPanel.classList.toggle('active');
+            };
+
+            speedItem.onclick = (e) => {
+                e.stopPropagation();
+                speedSubmenu.classList.toggle('active');
+            };
+
+            document.querySelectorAll('.speed-option').forEach(option => {
+                option.onclick = (e) => {
+                    e.stopPropagation();
+                    const speed = parseFloat(option.dataset.speed);
+                    video.playbackRate = speed;
+                    state.playbackSpeed = speed;
+                    state.save();
+                    document.getElementById('currentSpeed').textContent = speed === 1 ? 'Normal' : speed + 'x';
+                    document.querySelectorAll('.speed-option').forEach(o => o.classList.remove('active'));
+                    option.classList.add('active');
+                    settingsPanel.classList.remove('active');
+                    speedSubmenu.classList.remove('active');
+                };
+            });
+
+            pipBtn.onclick = async () => {
+                try {
+                    if (document.pictureInPictureElement) {
+                        await document.exitPictureInPicture();
+                    } else {
+                        await video.requestPictureInPicture();
+                    }
+                } catch (err) {
+                    console.log('PIP not supported or failed to request:', err);
+                }
+            };
+
+            // Fix Fullscreen logic
+            fullscreenBtn.onclick = () => {
+                if (!document.fullscreenElement) {
+                    videoWrapper.requestFullscreen().catch(err => {
+                           console.error("Error attempting to switch to fullscreen mode: ", err);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+
+            document.onfullscreenchange = () => {
+                const icon = fullscreenBtn.querySelector('i');
+                icon.className = document.fullscreenElement ? 'fas fa-compress' : 'fas fa-expand';
+            };
+
+            // Control hiding logic
+            videoWrapper.onmousemove = () => {
+                controls.classList.add('show');
+                clearTimeout(hideControlsTimeout);
+                hideControlsTimeout = setTimeout(() => {
+                    if (!video.paused && !settingsPanel.classList.contains('active')) {
+                        controls.classList.remove('show');
+                    }
+                }, 3000);
+            };
+
+            videoWrapper.onmouseleave = () => {
+                if (!video.paused) {
+                    controls.classList.remove('show');
+                }
+            };
+
+            video.onplay = () => {
+                hideControlsTimeout = setTimeout(() => {
+                    controls.classList.remove('show');
+                }, 3000);
+            };
+
+            video.onpause = () => {
+                controls.classList.add('show');
+                clearTimeout(hideControlsTimeout);
+                state.save(); // Save progress immediately on pause
+            };
+            
+            video.onended = () => {
+                video.pause();
+                playBtn.innerHTML = '<i class="fas fa-redo"></i>'; // Change icon to replay
+                state.progress[state.currentLesson.path] = 100; // Ensure 100% completion is saved
+                state.save();
+            }
+
+            if (markCompleteBtn) {
+                markCompleteBtn.onclick = () => {
+                    state.progress[state.currentLesson.path] = 100;
+                    state.save();
+                    markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                    markCompleteBtn.classList.add('active');
+                    
+                    // Update sidebar item immediately
+                    document.querySelectorAll('.lesson-item').forEach(el => {
+                        // Crude matching by text content, but effective for this structure
+                        if (el.textContent.includes(state.currentLesson.name) && !el.classList.contains('completed')) {
+                            el.classList.add('completed');
+                            el.querySelector('i').className = 'fas fa-check-circle';
+                        }
+                    });
+                };
+            }
+
+            if (addNoteBtn) {
+                addNoteBtn.onclick = () => {
+                    const noteInput = document.getElementById('noteInput');
+                    if (noteInput) {
+                        noteInput.focus();
+                        noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                };
+            }
+
+            document.onkeydown = (e) => {
+                if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+                switch(e.key) {
+                    case ' ':
+                    case 'k':
+                        e.preventDefault();
+                        if (video) togglePlay();
+                        break;
+                    case 'ArrowLeft':
+                    case 'j':
+                        e.preventDefault();
+                        if (video) video.currentTime -= 5;
+                        break;
+                    case 'ArrowRight':
+                    case 'l':
+                        e.preventDefault();
+                        if (video) video.currentTime += 5;
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (video) {
+                            video.volume = Math.min(1, video.volume + 0.1);
+                            volumeSlider.value = video.volume * 100;
+                            state.volume = video.volume;
+                            state.save();
+                            updateVolumeIcon();
+                        }
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (video) {
+                            video.volume = Math.max(0, video.volume - 0.1);
+                            volumeSlider.value = video.volume * 100;
+                            state.volume = video.volume;
+                            state.save();
+                            updateVolumeIcon();
+                        }
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        if (video) fullscreenBtn.click();
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        if (video) volumeBtn.click();
+                        break;
+                    case '0': case '1': case '2': case '3': case '4': 
+                    case '5': case '6': case '7': case '8': case '9':
+                        e.preventDefault();
+                        if (video) video.currentTime = (parseInt(e.key) / 10) * video.duration;
+                        break;
+                }
+            };
+
+            document.onclick = (e) => {
+                if (settingsPanel && !settingsPanel.contains(e.target) && settingsBtn !== e.target && !settingsBtn.contains(e.target)) {
+                    settingsPanel.classList.remove('active');
+                    speedSubmenu.classList.remove('active');
+                }
+            };
+        }
+
+        function createNotesSection(lesson) {
+            const notes = state.notes[lesson.path] || [];
+            return `
+                <div class="player-container">
+                    <div class="notes-section">
+                        <div class="section-header">
+                            <i class="fas fa-note-sticky"></i>
+                            Notes & Study Materials
+                        </div>
+                        <div class="note-input-container">
+                            <textarea class="note-input" id="noteInput" placeholder="Add a note at current timestamp... Perfect for summarizing key concepts or saving important points for later review."></textarea>
+                            <div class="note-actions">
+                                <button class="note-btn cancel" onclick="clearNoteInput()">Cancel</button>
+                                <button class="note-btn" onclick="saveNote()">
+                                    <i class="fas fa-save"></i>
+                                    Save Note
+                                </button>
+                            </div>
+                        </div>
+                        <div class="notes-list" id="notesList">
+                            ${notes.length === 0 ? '<div style="text-align: center; color: var(--text-secondary); font-size: 14px; padding: 40px 20px;"><i class="fas fa-lightbulb" style="font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3;"></i>No notes yet. Start taking notes to enhance your learning!</div>' : ''}
+                            ${notes.sort((a,b) => b.timestampSeconds - a.timestampSeconds).map((note, index) => `
+                                <div class="note-item">
+                                    <div class="note-header">
+                                        ${note.timestamp ? `
+                                            <span class="note-timestamp" onclick="jumpToTimestamp('${note.timestamp}')">
+                                                <i class="fas fa-clock"></i>
+                                                ${note.timestamp}
+                                            </span>
+                                        ` : '<span class="note-timestamp" style="cursor: default; background: rgba(255, 255, 255, 0.05);"><i class="fas fa-bookmark"></i> General Note</span>'}
+                                        <button class="note-delete" onclick="deleteNote(${index})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="note-text">${note.text}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function clearNoteInput() {
+            document.getElementById('noteInput').value = '';
+        }
+
+        function saveNote() {
+            const noteText = document.getElementById('noteInput').value.trim();
+            if (!noteText || !state.currentLesson) return;
+
+            const video = document.getElementById('videoPlayer');
+            let timestamp = null;
+            let timestampSeconds = 0;
+            
+            if (video && !isNaN(video.currentTime)) {
+                timestamp = formatTime(video.currentTime);
+                timestampSeconds = video.currentTime;
+            }
+
+            if (!state.notes[state.currentLesson.path]) {
+                state.notes[state.currentLesson.path] = [];
+            }
+
+            state.notes[state.currentLesson.path].push({
+                text: noteText,
+                timestamp: timestamp,
+                timestampSeconds: timestampSeconds,
+                date: new Date().toISOString()
+            });
+
+            state.save();
+            clearNoteInput();
+            
+            const notesSection = document.querySelector('.notes-section');
+            if (notesSection) {
+                notesSection.outerHTML = createNotesSection(state.currentLesson);
+            }
+        }
+
+        // Replaced native confirm()
+        function deleteNote(index) {
+            if (!state.currentLesson) return;
+            
+            showMessageModal({
+                title: 'Delete Note',
+                message: 'Are you sure you want to permanently delete this note?',
+                iconClass: 'fa-trash',
+                isConfirm: true,
+                onConfirm: (confirmed) => {
+                    if (confirmed) {
+                        state.notes[state.currentLesson.path].splice(index, 1);
+                        state.save();
+                        
+                        const notesSection = document.querySelector('.notes-section');
+                        if (notesSection) {
+                            notesSection.outerHTML = createNotesSection(state.currentLesson);
+                        }
+                    }
+                }
+            });
+        }
+
+        function jumpToTimestamp(timestamp) {
+            const video = document.getElementById('videoPlayer');
+            if (!video || !timestamp || timestamp === 'General Note') return;
+            
+            const note = (state.notes[state.currentLesson.path] || []).find(n => n.timestamp === timestamp);
+            if (note && note.timestampSeconds) {
+                video.currentTime = note.timestampSeconds;
+                video.play();
+            }
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function handleSearch(e) {
+            const query = e.target.value.toLowerCase();
+            const courseItems = document.querySelectorAll('.course-item');
+
+            courseItems.forEach(item => {
+                const courseTitle = item.querySelector('.course-title')?.textContent.toLowerCase() || '';
+                const lessons = item.querySelectorAll('.lesson-item');
+                let hasMatch = courseTitle.includes(query);
+
+                lessons.forEach(lesson => {
+                    const lessonName = lesson.textContent.toLowerCase();
+                    const lessonContainer = lesson.closest('.lesson-list');
+                    if (lessonName.includes(query)) {
+                        lesson.style.display = 'flex';
+                        hasMatch = true;
+                        if (query) {
+                             lessonContainer?.classList.add('expanded');
+                             lessonContainer?.previousElementSibling?.querySelector('.course-expand')?.classList.add('expanded');
+                        }
+                    } else {
+                        lesson.style.display = query ? 'none' : 'flex';
+                    }
+                });
+
+                item.style.display = hasMatch ? 'block' : 'none';
+            });
+        }
+
+        // --- URL Modal Functions ---
+        function openUrlModal() {
+            document.getElementById('urlModal').classList.add('active');
+            document.getElementById('courseTitle').focus();
+        }
+
+        function closeUrlModal() {
+            document.getElementById('urlModal').classList.remove('active');
+            document.getElementById('courseTitle').value = '';
+            document.getElementById('courseUrl').value = '';
+            document.getElementById('courseCategory').value = '';
+        }
+
+        function addUrlCourse() {
+            const title = document.getElementById('courseTitle').value.trim();
+            const url = document.getElementById('courseUrl').value.trim();
+            const category = document.getElementById('courseCategory').value.trim();
+
+            if (!title || !url) {
+                // Replaced native alert()
+                showMessageModal({
+                    title: 'Input Required',
+                    message: 'Please enter both a course title and a valid media URL.',
+                    iconClass: 'fa-exclamation-circle'
+                });
+                return;
+            }
+            
+            // As requested, this remains a single media item addition
+            state.urlCourses.push({
+                title: title,
+                url: url,
+                category: category || 'Online Content',
+                addedDate: new Date().toISOString()
+            });
+
+            state.save();
+            closeUrlModal();
+            switchSource('url');
+            renderUrlCourses();
+        }
+
+        // Replaced native confirm()
+        function deleteUrlCourse(index) {
+            showMessageModal({
+                title: 'Remove Course',
+                message: 'Are you sure you want to remove this URL course from your list? This action cannot be undone.',
+                iconClass: 'fa-trash',
+                isConfirm: true,
+                onConfirm: (confirmed) => {
+                    if (confirmed) {
+                        state.urlCourses.splice(index, 1);
+                        state.save();
+                        renderUrlCourses();
+                    }
+                }
+            });
+        }
+
+        // --- Generic Message/Confirmation Modal Functions ---
+        function showMessageModal({ title, message, iconClass, isConfirm = false, onConfirm }) {
+            const modal = document.getElementById('messageModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            
+            const icon = document.getElementById('modalIcon');
+            icon.className = `fas ${iconClass}`;
+            icon.style.color = iconClass.includes('trash') ? '#ff4444' : 'var(--accent-color)';
+
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+
+            if (isConfirm) {
+                cancelBtn.style.display = 'inline-flex';
+                confirmBtn.textContent = 'Yes, Delete';
+                confirmBtn.onclick = () => {
+                    hideMessageModal();
+                    if (onConfirm) onConfirm(true);
+                };
+                cancelBtn.onclick = () => {
+                    hideMessageModal();
+                    if (onConfirm) onConfirm(false);
+                };
+            } else {
+                // Alert mode
+                cancelBtn.style.display = 'none';
+                confirmBtn.textContent = 'Close';
+                confirmBtn.onclick = hideMessageModal;
+            }
+
+            modal.classList.add('active');
+        }
+
+        function hideMessageModal() {
+            document.getElementById('messageModal').classList.remove('active');
+        }
+
+        // Check for File System API support
+        if (!window.showDirectoryPicker) {
+            document.getElementById('loadFolderBtn').disabled = true;
+            document.getElementById('loadFolderBtn').title = 'File System API not supported in this browser. Use Chrome/Edge.';
+            document.querySelector('.welcome-actions button:first-child').disabled = true;
+            document.querySelector('.welcome-actions button:first-child').title = 'File System API not supported in this browser. Use Chrome/Edge.';
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeUrlModal();
+                hideMessageModal();
+                closeSidebar();
+            }
+        });
+    </script>
+</body>
+</html>
