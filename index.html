@@ -12,7 +12,7 @@
             box-sizing: border-box;
         }
 
-        :root {
+        /* :root {
             --bg-primary: #0f0f0f;
             --bg-secondary: #1a1a1a;
             --bg-tertiary: #242424;
@@ -25,7 +25,33 @@
             --success-color: #00c853;
             --warning-color: #ff9800;
             --sidebar-width: 320px;
+        } */
+
+        :root {
+            /* Base Colors - YT Music Inspired Dark Theme */
+            --bg-primary: #0f0f0f;    /* Deep, soft black (YT Music main background) */
+            --bg-secondary: #212121;  /* Card/Surface background (subtle lift) */
+            --bg-tertiary: #333333;   /* Input fields, deeper surfaces, search boxes */
+            --bg-hover: #3e3e3e;      /* Hover state on dark elements */
+            
+            /* Text Colors - High Contrast for Readability */
+            --text-primary: #ffffff;  /* Pure white for titles and main text */
+            --text-secondary: #aaaaaa; /* Gray for metadata, subtle contrast */
+            
+            /* Accent Colors - Vibrant Red (Airbnb-inspired, still standing out) */
+            --accent-color: #ff5a5f;   /* Primary Accent: Vibrant Red (Airbnb Red) */
+            --accent-hover: #ff7e82;  /* Brighter Red hover state */
+            --accent-secondary: #007aff; /* System Blue (Retained for secondary UI elements like links/icons if needed) */
+            
+            /* Functional Colors */
+            --border-color: #404040;  /* Clean separation line */
+            --success-color: #34c759; /* System Green for success/complete (Vibrant) */
+            --warning-color: #ff9500; /* System Orange/Amber for warnings */
+            
+            /* Layout */
+            --sidebar-width: 320px;
         }
+
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
@@ -529,11 +555,24 @@
             transition: all 0.3s;
         }
         
-        .video-wrapper audio {
+        /* .video-wrapper audio {
             width: 100%;
             height: 50px;
             display: block;
             background: var(--bg-tertiary);
+        } */
+
+        /* Audio Player (Customizing the look inside .video-wrapper) */
+        .video-wrapper audio {
+            width: 100%;
+            height: 50px;
+            display: block;
+            /* Apple Music में, यह कंटेनर अक्सर आस-पास के डार्क बैकग्राउंड से थोड़ा हल्का होता है */
+            background: var(--bg-secondary); 
+            border-radius: 12px; /* Apple UI में सॉफ्ट कॉर्नर होते हैं */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* हल्की परछाई गहराई के लिए */
+            padding: 0 10px; 
+            border: 1px solid var(--border-color); 
         }
 
         /* 2. CRITICAL FIX: Force the media element inside the fullscreen wrapper to fill it */
