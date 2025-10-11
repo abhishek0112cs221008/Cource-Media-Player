@@ -3,15 +3,1194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>पठनपाठ्यक्रमः</title>
+    <title>Course Player - Study Hub</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    <!-- Logo for "My Learnings" -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='64' height='64' rx='16' fill='%23667eea'/%3E%3Ctext x='50%' y='50%' text-anchor='middle' dominant-baseline='central' font-family='Arial, sans-serif' font-size='18' fill='white'%3EMy%20Learnings%3C/text%3E%3C/svg%3E">
-    <meta property="og:title" content="My Learnings">
-    <!-- Improved Logo for "My Learnings" -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='64' height='64' rx='16' fill='%23667eea'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%23fff'/%3E%3Cpath d='M32 18c-4.418 0-8 2.686-8 6v8c0 3.314 3.582 6 8 6s8-2.686 8-6v-8c0-3.314-3.582-6-8-6zm0 2c3.314 0 6 1.791 6 4v8c0 2.209-2.686 4-6 4s-6-1.791-6-4v-8c0-2.209 2.686-4 6-4zm-4 10h8v2h-8v-2z' fill='%23667eea'/%3E%3Ctext x='32' y='54' text-anchor='middle' font-family='Arial, sans-serif' font-size='12' fill='%23667eea'%3EML%3C/text%3E%3C/svg%3E">
-    <meta property="og:site_name" content="My Learnings">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --bg-hover: #2d2d2d;
+            --text-primary: #f1f1f1;
+            --text-secondary: #aaaaaa;
+            --accent-color: #3ea6ff;
+            --accent-hover: #65b8ff;
+            --border-color: #303030;
+            --success-color: #00c853;
+            --warning-color: #ff9800;
+            --sidebar-width: 320px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --------------------- Sidebar --------------------- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative; /* For .sidebar-close positioning */
+        }
+        
+        .sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: none; /* Hidden on Desktop */
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--accent-color), #667eea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(62, 166, 255, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .source-tabs {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+        }
+
+        .source-tab {
+            flex: 1;
+            padding: 8px 8px; /* Slightly reduced padding to fit better */
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .source-tab.active {
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+        }
+
+        .course-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .course-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .course-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .course-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .course-item {
+            margin-bottom: 8px;
+        }
+
+        .course-header {
+            padding: 12px 16px;
+            background: transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+        .course-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .course-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent-color), #667eea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .course-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .course-title {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .course-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .course-expand {
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+
+        .course-expand.expanded {
+            transform: rotate(90deg);
+        }
+
+        .lesson-list {
+            display: none;
+            padding: 4px 8px 8px 56px;
+        }
+
+        .lesson-list.expanded {
+            display: block;
+        }
+
+        .lesson-item {
+            padding: 10px 16px;
+            margin: 4px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .lesson-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .lesson-item.active {
+            background: linear-gradient(90deg, rgba(62, 166, 255, 0.15), transparent);
+            color: var(--accent-color);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .lesson-item i {
+            font-size: 14px;
+            width: 20px;
+        }
+
+        .lesson-item.completed {
+            opacity: 0.7;
+        }
+
+        .lesson-item.completed i {
+            color: var(--success-color);
+        }
+
+        /* --------------------- Main Content & Topbar --------------------- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s, transform 0.3s;
+            display: none;
+        }
+
+        .menu-toggle:hover {
+            background: var(--bg-hover);
+        }
+
+        .breadcrumb {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-icon {
+            background: var(--bg-tertiary);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(62, 166, 255, 0.3);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .welcome-screen {
+            max-width: 600px;
+            margin: 80px auto;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .welcome-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 32px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--accent-color), #667eea);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            color: white;
+        }
+
+        .welcome-screen h2 {
+            font-size: 32px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .welcome-screen p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .welcome-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        /* --------------------- Video Player & Controls --------------------- */
+        .player-container {
+            background: var(--bg-primary);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            margin-bottom: 24px;
+            /* Center content in the wrapper */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 1. Ensure the wrapper fills the viewport when fullscreen */
+        .video-wrapper:-webkit-full-screen,
+        .video-wrapper:-moz-full-screen,
+        .video-wrapper:-ms-fullscreen,
+        .video-wrapper:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-height: 100vh; 
+            border-radius: 0;
+            margin-bottom: 0;
+            background: #000;
+            top: 0;
+            left: 0;
+            position: fixed; 
+        }
+
+        .video-wrapper video,
+        .video-wrapper iframe {
+            width: 100%;
+            display: block;
+            max-height: 70vh;
+            object-fit: contain; 
+            transition: all 0.3s;
+        }
+        
+        .video-wrapper audio {
+            width: 100%;
+            height: 50px;
+            display: block;
+            background: var(--bg-tertiary);
+        }
+
+        /* 2. CRITICAL FIX: Force the media element inside the fullscreen wrapper to fill it */
+        .video-wrapper:fullscreen video,
+        .video-wrapper:fullscreen iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            object-fit: contain; 
+            transform: translate(-50%, -50%); 
+            width: 100% !important; 
+            height: 100% !important; 
+            max-height: 100vh !important;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.95));
+            padding: 48px 16px 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        /* 3. FIX: Show controls on hover/pause for regular view AND fullscreen */
+        .video-wrapper:hover .video-controls,
+        .video-controls.show,
+        .video-wrapper.paused .video-controls,
+        .video-wrapper:fullscreen:hover .video-controls, /* Show on hover in fullscreen */
+        .video-wrapper.fullscreen.paused .video-controls { /* Show when paused in fullscreen */
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            cursor: pointer;
+            margin-bottom: 12px;
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .progress-container:hover {
+            height: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            position: relative;
+            border-radius: 2px;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .progress-container:hover .progress-bar::after {
+            opacity: 1;
+        }
+
+        .buffered-bar {
+            position: absolute;
+            height: 100%;
+            background: rgba(255,255,255,0.3);
+            left: 0;
+            border-radius: 2px;
+        }
+
+        .controls-bottom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.1);
+        }
+
+        .play-btn {
+            font-size: 28px;
+        }
+
+        .control-btn i {
+            font-size: 18px;
+        }
+
+        .time-display {
+            font-size: 14px;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-slider {
+            width: 0;
+            opacity: 0;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .volume-container:hover .volume-slider {
+            width: 80px;
+            opacity: 1;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .settings-menu {
+            position: relative;
+        }
+
+        .settings-panel {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: rgba(28, 28, 28, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 8px 0;
+            min-width: 220px;
+            margin-bottom: 12px;
+            display: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .settings-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .settings-item.active {
+            color: var(--accent-color);
+        }
+
+        .settings-submenu {
+            position: absolute;
+            bottom: 0;
+            right: 100%;
+            background: rgba(28, 28, 28, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 8px 0;
+            min-width: 160px;
+            margin-right: 8px;
+            display: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+
+        .settings-submenu.active {
+            display: block;
+        }
+
+        /* Video Info */
+        .video-info {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        /* PDF Viewer Container */
+        .player-container > div:last-child:not(.video-info) {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .video-meta {
+            display: flex;
+            gap: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .video-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.active {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        /* Notes Section */
+        .notes-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .section-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .note-input-container {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .note-input-container:focus-within {
+            border-color: var(--accent-color);
+        }
+
+        .note-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            padding: 4px;
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.6;
+        }
+
+        .note-input:focus {
+            outline: none;
+        }
+
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .note-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .note-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .note-btn.cancel {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .note-btn.cancel:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .note-item {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .note-item:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .note-timestamp {
+            color: var(--accent-color);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 12px;
+            background: rgba(62, 166, 255, 0.1);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .note-timestamp:hover {
+            background: rgba(62, 166, 255, 0.2);
+        }
+
+        .note-delete {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .note-delete:hover {
+            background: rgba(255,0,0,0.1);
+            color: #ff4444;
+        }
+
+        .note-text {
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(62, 166, 255, 0.1);
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* --------------------- Mobile Responsive --------------------- */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .sidebar-close {
+                display: flex; /* Show close button on mobile sidebar */
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .player-container {
+                padding: 16px;
+            }
+
+            .video-wrapper video {
+                max-height: 50vh;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .welcome-screen {
+                margin: 40px auto;
+                padding: 20px;
+            }
+
+            .welcome-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+            }
+
+            .welcome-screen h2 {
+                font-size: 24px;
+            }
+
+            .video-title {
+                font-size: 20px;
+            }
+
+            .video-meta {
+                font-size: 13px;
+                gap: 16px;
+            }
+
+            .controls-bottom {
+                gap: 4px;
+            }
+
+            .control-btn {
+                padding: 8px;
+            }
+
+            .control-btn i {
+                font-size: 16px;
+            }
+
+            .play-btn {
+                font-size: 24px;
+            }
+
+            .time-display {
+                font-size: 12px;
+            }
+
+            .volume-container:hover .volume-slider {
+                width: 60px;
+            }
+
+            .video-actions {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .source-tabs {
+                flex-direction: column;
+            }
+        }
+
+        /* --------------------- Overlay --------------------- */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 90;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="overlay" id="overlay"></div>
@@ -19,6 +1198,9 @@
     <div class="app-container">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <button class="sidebar-close" id="sidebarClose">
+                    <i class="fas fa-times"></i>
+                </button>
                 <div class="logo">
                     <i class="fas fa-graduation-cap"></i>
                     <span>My Courses</span>
@@ -33,6 +1215,12 @@
                     </button>
                     <button class="source-tab" data-source="url" id="urlTab">
                         <i class="fas fa-link"></i> URL
+                    </button>
+                    <button class="source-tab" data-source="playlist" id="playlistTab">
+                        <i class="fas fa-list"></i> Playlist
+                    </button>
+                    <button class="source-tab" data-source="gdrive" id="gdriveTab">
+                        <i class="fab fa-google-drive"></i> Drive
                     </button>
                 </div>
             </div>
@@ -56,8 +1244,14 @@
                     </div>
                 </div>
                 <div class="topbar-actions">
+                    <button class="btn-icon" id="addGDriveBtn" title="Add Google Drive Folder">
+                        <i class="fab fa-google-drive"></i>
+                    </button>
                     <button class="btn-icon" id="addUrlBtn" title="Add from URL">
                         <i class="fas fa-link"></i>
+                    </button>
+                    <button class="btn-icon" id="addPlaylistBtn" title="Add Playlist">
+                        <i class="fas fa-list"></i>
                     </button>
                     <button class="btn-primary" id="loadFolderBtn">
                         <i class="fas fa-folder-open"></i>
@@ -81,6 +1275,10 @@
                         <button class="btn-secondary" onclick="document.getElementById('addUrlBtn').click()">
                             <i class="fas fa-link"></i>
                             Add from URL
+                        </button>
+                        <button class="btn-secondary" onclick="document.getElementById('addPlaylistBtn').click()">
+                            <i class="fas fa-list"></i>
+                            Create Playlist
                         </button>
                     </div>
                 </div>
@@ -115,29 +1313,73 @@
             </button>
         </div>
     </div>
-    
-    <div class="modal" id="messageModal">
+
+    <div class="modal" id="playlistModal">
         <div class="modal-content">
-            <div class="modal-header" style="justify-content: flex-start; gap: 16px;">
-                <i id="modalIcon" class="fas fa-info-circle" style="color: var(--accent-color); font-size: 28px;"></i>
-                <h3 id="modalTitle">Alert</h3>
-                <button class="close-modal" onclick="hideMessageModal()" style="margin-left: auto;">
+            <div class="modal-header">
+                <h3>Create Video Playlist</h3>
+                <button class="close-modal" onclick="closePlaylistModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <p id="modalMessage" style="margin-bottom: 24px; color: var(--text-secondary);"></p>
-            <div id="modalActions" style="display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="note-btn cancel" id="modalCancelBtn" onclick="hideMessageModal()">Cancel</button>
-                <button class="note-btn" id="modalConfirmBtn">Confirm</button>
+            <div class="form-group">
+                <label class="form-label">Playlist Name</label>
+                <input type="text" class="form-input" id="playlistName" placeholder="e.g., JavaScript Tutorial Series">
             </div>
+            <div class="form-group">
+                <label class="form-label">Category (Optional)</label>
+                <input type="text" class="form-input" id="playlistCategory" placeholder="e.g., Programming">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Video URLs (one per line)</label>
+                <textarea class="form-input" id="playlistUrls" placeholder="https://example.com/video1.mp4&#10;https://youtube.com/watch?v=...&#10;https://drive.google.com/file/d/...&#10;&#10;Paste multiple video URLs, each on a new line" style="min-height: 150px; resize: vertical;"></textarea>
+                <p class="form-help">Add multiple video URLs (YouTube, Drive, direct links). Each URL will become a lesson.</p>
+            </div>
+            <button class="btn-primary" onclick="addPlaylist()" style="width: 100%; justify-content: center;">
+                <i class="fas fa-plus"></i>
+                Create Playlist
+            </button>
+        </div>
+    </div>
+
+    <div class="modal" id="gdriveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Google Drive Folder</h3>
+                <button class="close-modal" onclick="closeGDriveModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Folder Name</label>
+                <input type="text" class="form-input" id="gdriveFolderName" placeholder="e.g., My Course Collection">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Google Drive Folder URL</label>
+                <input type="url" class="form-input" id="gdriveFolderUrl" placeholder="https://drive.google.com/drive/folders/...">
+                <p class="form-help">Paste the Google Drive folder link. Make sure the folder is set to "Anyone with the link can view"</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category (Optional)</label>
+                <input type="text" class="form-input" id="gdriveCategory" placeholder="e.g., Programming">
+            </div>
+            <button class="btn-primary" onclick="addGDriveFolder()" style="width: 100%; justify-content: center;">
+                <i class="fab fa-google-drive"></i>
+                Add Folder
+            </button>
+            <p class="form-help" style="margin-top: 16px; text-align: center;">
+                <i class="fas fa-info-circle"></i> You'll be prompted to add file links from the folder in the next step.
+            </p>
         </div>
     </div>
 
     <script>
-        // State Management
+        // --------------------- State Management ---------------------
         const state = {
             courses: [],
             urlCourses: [],
+            playlists: [],
+            gdriveFolders: [],
             currentLesson: null,
             currentSource: 'local',
             directoryHandle: null,
@@ -145,11 +1387,12 @@
             notes: {},
             playbackSpeed: 1,
             volume: 1,
+            
             init() {
                 this.loadFromStorage();
             },
+            
             loadFromStorage() {
-                // IMPORTANT: Using localStorage as requested, but for persistence in a real app, use Firestore or another database.
                 const saved = localStorage.getItem('coursePlayerState');
                 if (saved) {
                     const data = JSON.parse(saved);
@@ -158,16 +1401,15 @@
                     this.playbackSpeed = data.playbackSpeed || 1;
                     this.volume = data.volume || 1;
                     this.urlCourses = data.urlCourses || [];
+                    this.playlists = data.playlists || [];
+                    this.gdriveFolders = data.gdriveFolders || [];
                     
                     if (data.directoryHandleName) {
                         this.restoreDirectoryAccess(data.directoryHandleName);
                     }
-
-                    if (this.urlCourses.length > 0) {
-                        renderUrlCourses();
-                    }
                 }
             },
+            
             async restoreDirectoryAccess(name) {
                 const handles = await this.getStoredHandles();
                 const handle = handles.find(h => h.name === name);
@@ -183,6 +1425,7 @@
                     }
                 }
             },
+            
             async getStoredHandles() {
                 return new Promise((resolve) => {
                     const request = indexedDB.open('CoursePlayerDB', 1);
@@ -202,6 +1445,7 @@
                     request.onerror = () => resolve([]);
                 });
             },
+            
             async saveDirectoryHandle(handle) {
                 return new Promise((resolve) => {
                     const request = indexedDB.open('CoursePlayerDB', 1);
@@ -220,12 +1464,14 @@
                     };
                 });
             },
+            
             async loadCoursesFromHandle() {
                 if (!this.directoryHandle) return;
                 const courses = await scanDirectory(this.directoryHandle);
                 this.courses = courses;
                 renderLocalCourses();
             },
+            
             save() {
                 const data = {
                     progress: this.progress,
@@ -233,65 +1479,56 @@
                     playbackSpeed: this.playbackSpeed,
                     volume: this.volume,
                     directoryHandleName: this.directoryHandle?.name,
-                    urlCourses: this.urlCourses
+                    urlCourses: this.urlCourses,
+                    playlists: this.playlists,
+                    gdriveFolders: this.gdriveFolders
                 };
                 localStorage.setItem('coursePlayerState', JSON.stringify(data));
             }
         };
 
-        // Initialize
+        // --------------------- Initialization & UI Helpers ---------------------
         document.addEventListener('DOMContentLoaded', () => {
             state.init();
             initializeEventListeners();
+            // Initial render based on loaded state (default to 'local')
+            switchSource(state.currentSource); 
         });
 
         function initializeEventListeners() {
             document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
             document.getElementById('loadFolderBtn').addEventListener('click', loadLocalFolder);
             document.getElementById('addUrlBtn').addEventListener('click', openUrlModal);
+            document.getElementById('addPlaylistBtn').addEventListener('click', openPlaylistModal);
+            document.getElementById('addGDriveBtn').addEventListener('click', openGDriveModal);
             document.getElementById('searchInput').addEventListener('input', handleSearch);
             document.getElementById('localTab').addEventListener('click', () => switchSource('local'));
             document.getElementById('urlTab').addEventListener('click', () => switchSource('url'));
-            document.getElementById('overlay').addEventListener('click', () => {
-                closeSidebar();
-                closeUrlModal();
-                hideMessageModal();
-            });
+            document.getElementById('playlistTab').addEventListener('click', () => switchSource('playlist'));
+            document.getElementById('gdriveTab').addEventListener('click', () => switchSource('gdrive'));
+            
+            const overlay = document.getElementById('overlay');
+            if (overlay) {
+                 overlay.addEventListener('click', () => {
+                    closeSidebar();
+                    closeUrlModal();
+                    closePlaylistModal();
+                    closeGDriveModal();
+                });
+            }
         }
 
-        // --- Sidebar Logic ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
-            const toggleBtn = document.getElementById('menuToggle');
-            const icon = toggleBtn.querySelector('i');
-
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
-            
-            // Toggle the icon for mobile view
-            if (sidebar.classList.contains('active')) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
-            } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
-            }
         }
 
         function closeSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            const toggleBtn = document.getElementById('menuToggle');
-
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-
-            if (toggleBtn) {
-                const icon = toggleBtn.querySelector('i');
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
-            }
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
         }
 
         function switchSource(source) {
@@ -302,13 +1539,21 @@
 
             if (source === 'local') {
                 renderLocalCourses();
-            } else {
+            } else if (source === 'url') {
                 renderUrlCourses();
+            } else if (source === 'playlist') {
+                renderPlaylists();
+            } else if (source === 'gdrive') {
+                renderGDriveFolders();
             }
         }
 
         async function loadLocalFolder() {
             try {
+                if (!window.showDirectoryPicker) {
+                    alert('File System Access API is not supported in this browser. Please use Chrome or Edge.');
+                    return;
+                }
                 const dirHandle = await window.showDirectoryPicker();
                 state.directoryHandle = dirHandle;
                 await state.saveDirectoryHandle(dirHandle);
@@ -319,12 +1564,7 @@
                 state.save();
             } catch (err) {
                 if (err.name !== 'AbortError') {
-                    // Replaced native alert()
-                    showMessageModal({
-                        title: 'Loading Error',
-                        message: 'Error loading folder. Please ensure read permissions are granted and try again. This feature requires Chrome/Edge.',
-                        iconClass: 'fa-exclamation-triangle'
-                    });
+                    alert('Error loading folder. Please try again. Ensure all files are accessible.');
                 }
             }
         }
@@ -332,30 +1572,21 @@
         async function scanDirectory(dirHandle, path = '') {
             const courses = [];
             const lessons = [];
-            const videoAudioExtensions = ['mp4', 'mp3', 'pdf', 'webm', 'mkv', 'avi', 'mov', 'ogg', 'wav'];
 
             for await (const entry of dirHandle.values()) {
                 if (entry.kind === 'directory') {
-                    // Recursively scan subdirectories for nested modules/courses
-                    const subLessonsOrModules = await scanDirectory(entry, `${path}/${entry.name}`);
-                    if (subLessonsOrModules.length > 0) {
-                        const isModule = subLessonsOrModules.every(item => item.lessons);
-                        
-                        // Decide if the directory is a Course (containing modules/files) or just a Module (containing files)
+                    const subCourse = await scanDirectory(entry, `${path}/${entry.name}`);
+                    if (subCourse.length > 0) {
                         courses.push({
                             name: entry.name,
                             path: `${path}/${entry.name}`,
-                            lessons: isModule ? subLessonsOrModules : subLessonsOrModules.map(lesson => ({
-                                ...lesson,
-                                name: `${entry.name}: ${lesson.name}`, // Prefix lesson name for clarity
-                                path: `${path}/${entry.name}/${lesson.file.name}`
-                            })),
+                            lessons: subCourse,
                             handle: entry
                         });
                     }
                 } else if (entry.kind === 'file') {
                     const ext = entry.name.split('.').pop().toLowerCase();
-                    if (videoAudioExtensions.includes(ext)) {
+                    if (['mp4', 'mp3', 'pdf', 'webm', 'mkv', 'avi', 'mov', 'wav', 'ogg', 'm4a'].includes(ext)) {
                         lessons.push({
                             name: entry.name.replace(/\.[^/.]+$/, ""),
                             type: getFileType(ext),
@@ -368,18 +1599,17 @@
                 }
             }
 
-            // If the current directory contains files (lessons) AND no sub-directories were treated as courses, return the lessons.
-            // Otherwise, return the nested courses.
             return courses.length > 0 ? courses : lessons;
         }
 
-
         function getFileType(ext) {
             if (['mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext)) return 'video';
-            if (['mp3', 'wav', 'ogg'].includes(ext)) return 'audio';
+            if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio';
             if (ext === 'pdf') return 'pdf';
             return 'unknown';
         }
+
+        // --------------------- Render Functions ---------------------
 
         function renderLocalCourses() {
             const courseList = document.getElementById('courseList');
@@ -389,7 +1619,7 @@
                     <div class="empty-state">
                         <i class="fas fa-folder-open"></i>
                         <p>No local courses loaded</p>
-                        <button class="btn-secondary" onclick="loadLocalFolder()" style="margin-top: 12px;">
+                        <button class="btn-secondary" onclick="loadLocalFolder()" style="margin-top: 16px;">
                             <i class="fas fa-folder-open"></i>
                             Load Courses
                         </button>
@@ -412,8 +1642,8 @@
                 courseList.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-link"></i>
-                        <p>No URL courses added. Add videos, audio, or online presentations.</p>
-                        <button class="btn-secondary" onclick="openUrlModal()" style="margin-top: 12px;">
+                        <p>No URL courses added</p>
+                        <button class="btn-secondary" onclick="openUrlModal()" style="margin-top: 16px;">
                             <i class="fas fa-plus"></i>
                             Add Course
                         </button>
@@ -429,24 +1659,63 @@
             });
         }
 
+        function renderPlaylists() {
+            const courseList = document.getElementById('courseList');
+            
+            if (state.playlists.length === 0) {
+                courseList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-list"></i>
+                        <p>No playlists created</p>
+                        <button class="btn-secondary" onclick="openPlaylistModal()" style="margin-top: 16px;">
+                            <i class="fas fa-plus"></i>
+                            Create Playlist
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            courseList.innerHTML = '';
+            state.playlists.forEach((playlist, index) => {
+                const playlistEl = createPlaylistElement(playlist, index);
+                courseList.appendChild(playlistEl);
+            });
+        }
+
+        function renderGDriveFolders() {
+            const courseList = document.getElementById('courseList');
+            
+            if (state.gdriveFolders.length === 0) {
+                courseList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fab fa-google-drive"></i>
+                        <p>No Google Drive folders added</p>
+                        <button class="btn-secondary" onclick="openGDriveModal()" style="margin-top: 16px;">
+                            <i class="fab fa-google-drive"></i>
+                            Add Drive Folder
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            courseList.innerHTML = '';
+            state.gdriveFolders.forEach((folder, index) => {
+                const folderEl = createGDriveFolderElement(folder, index);
+                courseList.appendChild(folderEl);
+            });
+        }
+
+        // --------------------- Element Creation Functions ---------------------
+
         function createCourseElement(course) {
             const div = document.createElement('div');
             div.className = 'course-item';
 
-            // Flatten nested structure to count all lessons
-            const allLessons = [];
-            const collectLessons = (lessons) => {
-                lessons.forEach(item => {
-                    if (item.file) {
-                        allLessons.push(item);
-                    } else if (item.lessons) {
-                        collectLessons(item.lessons);
-                    }
-                });
-            };
-            collectLessons(course.lessons);
-            const totalLessons = allLessons.length;
-
+            const totalLessons = Array.isArray(course.lessons[0]?.lessons) 
+                ? course.lessons.reduce((sum, m) => sum + m.lessons.length, 0)
+                : course.lessons.length;
 
             const header = document.createElement('div');
             header.className = 'course-header';
@@ -464,22 +1733,17 @@
             const lessonList = document.createElement('div');
             lessonList.className = 'lesson-list';
 
-            // Function to recursively render modules and lessons
-            const renderLessons = (lessons) => {
-                lessons.forEach(item => {
-                    if (item.file) {
-                        lessonList.appendChild(createLessonElement(item));
-                    } else if (item.lessons) {
-                        const moduleHeader = document.createElement('div');
-                        moduleHeader.style.cssText = 'padding: 8px 16px; margin: 8px 0 4px; font-weight: 600; font-size: 13px; color: var(--accent-color); border-top: 1px solid var(--border-color);';
-                        moduleHeader.textContent = item.name;
-                        lessonList.appendChild(moduleHeader);
-                        renderLessons(item.lessons); // Recurse for nested lessons
-                    }
+            if (Array.isArray(course.lessons[0]?.lessons)) {
+                course.lessons.forEach(module => {
+                    module.lessons.forEach(lesson => {
+                        lessonList.appendChild(createLessonElement(lesson));
+                    });
                 });
-            };
-            
-            renderLessons(course.lessons);
+            } else {
+                course.lessons.forEach(lesson => {
+                    lessonList.appendChild(createLessonElement(lesson));
+                });
+            }
 
             header.onclick = () => {
                 lessonList.classList.toggle('expanded');
@@ -488,34 +1752,6 @@
 
             div.appendChild(header);
             div.appendChild(lessonList);
-            return div;
-        }
-
-        function createUrlCourseElement(course, index) {
-            const div = document.createElement('div');
-            div.className = 'course-item';
-
-            const header = document.createElement('div');
-            header.className = 'course-header';
-            header.innerHTML = `
-                <div class="course-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                    <i class="fas fa-globe"></i>
-                </div>
-                <div class="course-info">
-                    <div class="course-title">${course.title}</div>
-                    <div class="course-meta">${course.category || 'Online Content'}</div>
-                </div>
-                <button class="note-delete" onclick="event.stopPropagation(); deleteUrlCourse(${index})" title="Remove Course" style="margin-left: auto;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            `;
-
-            header.onclick = () => {
-                loadUrlLesson(course);
-                if (window.innerWidth <= 1024) closeSidebar();
-            };
-
-            div.appendChild(header);
             return div;
         }
 
@@ -541,6 +1777,156 @@
             return div;
         }
 
+        function createUrlCourseElement(course, index) {
+            const div = document.createElement('div');
+            div.className = 'course-item';
+
+            const header = document.createElement('div');
+            header.className = 'course-header';
+            header.innerHTML = `
+                <div class="course-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="course-info">
+                    <div class="course-title">${course.title}</div>
+                    <div class="course-meta">${course.category || 'Online Course'}</div>
+                </div>
+                <button class="note-delete" onclick="event.stopPropagation(); deleteUrlCourse(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+
+            header.onclick = () => {
+                loadUrlLesson(course);
+                if (window.innerWidth <= 1024) closeSidebar();
+            };
+
+            div.appendChild(header);
+            return div;
+        }
+
+        function createPlaylistElement(playlist, playlistIndex) {
+            const div = document.createElement('div');
+            div.className = 'course-item';
+
+            const header = document.createElement('div');
+            header.className = 'course-header';
+            header.innerHTML = `
+                <div class="course-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="course-info">
+                    <div class="course-title">${playlist.name}</div>
+                    <div class="course-meta">${playlist.videos.length} videos • ${playlist.category || 'Playlist'}</div>
+                </div>
+                <button class="note-delete" onclick="event.stopPropagation(); deletePlaylist(${playlistIndex})" style="margin-left: auto;">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <i class="fas fa-chevron-right course-expand"></i>
+            `;
+
+            const lessonList = document.createElement('div');
+            lessonList.className = 'lesson-list';
+
+            playlist.videos.forEach((video, videoIndex) => {
+                const lessonEl = createPlaylistLessonElement(video, playlistIndex, videoIndex);
+                lessonList.appendChild(lessonEl);
+            });
+
+            header.onclick = (e) => {
+                if (e.target.closest('.note-delete')) return;
+                lessonList.classList.toggle('expanded');
+                header.querySelector('.course-expand').classList.toggle('expanded');
+            };
+
+            div.appendChild(header);
+            div.appendChild(lessonList);
+            return div;
+        }
+
+        function createPlaylistLessonElement(video, playlistIndex, videoIndex) {
+            const div = document.createElement('div');
+            div.className = 'lesson-item';
+            
+            const isCompleted = state.progress[video.url] >= 90;
+            if (isCompleted) div.classList.add('completed');
+
+            div.innerHTML = `
+                <i class="fas ${isCompleted ? 'fa-check-circle' : 'fa-play-circle'}"></i>
+                <span>${video.title}</span>
+            `;
+
+            div.onclick = (event) => {
+                loadPlaylistVideo(video, playlistIndex, videoIndex, event);
+                if (window.innerWidth <= 1024) closeSidebar();
+            };
+            return div;
+        }
+
+        function createGDriveFolderElement(folder, folderIndex) {
+            const div = document.createElement('div');
+            div.className = 'course-item';
+
+            const header = document.createElement('div');
+            header.className = 'course-header';
+            header.innerHTML = `
+                <div class="course-icon" style="background: linear-gradient(135deg, #4285f4, #34a853);">
+                    <i class="fab fa-google-drive"></i>
+                </div>
+                <div class="course-info">
+                    <div class="course-title">${folder.name}</div>
+                    <div class="course-meta">${folder.files.length} files • ${folder.category || 'Google Drive'}</div>
+                </div>
+                <button class="note-delete" onclick="event.stopPropagation(); deleteGDriveFolder(${folderIndex})" style="margin-left: auto;">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <i class="fas fa-chevron-right course-expand"></i>
+            `;
+
+            const lessonList = document.createElement('div');
+            lessonList.className = 'lesson-list';
+
+            folder.files.forEach((file, fileIndex) => {
+                const lessonEl = createGDriveFileElement(file, folderIndex, fileIndex);
+                lessonList.appendChild(lessonEl);
+            });
+
+            header.onclick = (e) => {
+                if (e.target.closest('.note-delete')) return;
+                lessonList.classList.toggle('expanded');
+                header.querySelector('.course-expand').classList.toggle('expanded');
+            };
+
+            div.appendChild(header);
+            div.appendChild(lessonList);
+            return div;
+        }
+
+        function createGDriveFileElement(file, folderIndex, fileIndex) {
+            const div = document.createElement('div');
+            div.className = 'lesson-item';
+            
+            const icon = file.type === 'video' ? 'fa-play-circle' : 
+                         file.type === 'audio' ? 'fa-music' : 
+                         file.type === 'pdf' ? 'fa-file-pdf' : 'fa-file';
+            
+            const isCompleted = state.progress[file.url] >= 90;
+            if (isCompleted) div.classList.add('completed');
+
+            div.innerHTML = `
+                <i class="fas ${isCompleted ? 'fa-check-circle' : icon}"></i>
+                <span>${file.name}</span>
+            `;
+
+            div.onclick = (event) => {
+                loadGDriveFile(file, folderIndex, fileIndex, event);
+                if (window.innerWidth <= 1024) closeSidebar();
+            };
+            return div;
+        }
+
+        // --------------------- Load Lesson Functions ---------------------
+
         async function loadLesson(lesson, element) {
             state.currentLesson = lesson;
             
@@ -563,6 +1949,7 @@
             } else if (lesson.type === 'pdf') {
                 const file = await lesson.file.getFile();
                 const url = URL.createObjectURL(file);
+                // Use standard dark background (var(--bg-secondary)) for PDF container
                 contentArea.innerHTML = `
                     <div class="player-container">
                         <div class="video-info">
@@ -583,12 +1970,11 @@
         }
 
         function loadUrlLesson(course) {
-            // Note: URL courses are treated as a single lesson/media file.
             state.currentLesson = {
                 name: course.title,
-                type: course.url.match(/\.(mp3|wav|ogg)$/i) ? 'audio' : 'video',
+                type: 'video',
                 url: course.url,
-                path: course.url, // URL used as unique path key
+                path: course.url,
                 source: 'url'
             };
 
@@ -605,8 +1991,86 @@
             contentArea.insertAdjacentHTML('beforeend', notesHtml);
         }
 
+        function loadPlaylistVideo(video, playlistIndex, videoIndex, event) {
+            state.currentLesson = {
+                name: video.title,
+                type: 'video',
+                url: video.url,
+                path: video.url,
+                source: 'playlist',
+                playlistIndex: playlistIndex,
+                videoIndex: videoIndex
+            };
+
+            document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+            document.getElementById('breadcrumb').innerHTML = `
+                <i class="fas fa-list"></i>
+                <span>${state.playlists[playlistIndex].name}</span>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5; margin: 0 4px;"></i>
+                <span>${video.title}</span>
+            `;
+
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = createMediaPlayer(processUrl(video.url), state.currentLesson);
+            initializeMediaPlayer();
+
+            const notesHtml = createNotesSection(state.currentLesson);
+            contentArea.insertAdjacentHTML('beforeend', notesHtml);
+        }
+
+        function loadGDriveFile(file, folderIndex, fileIndex, event) {
+            state.currentLesson = {
+                name: file.name,
+                type: file.type,
+                url: file.url,
+                path: file.url,
+                source: 'gdrive',
+                folderIndex: folderIndex,
+                fileIndex: fileIndex
+            };
+
+            document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+            document.getElementById('breadcrumb').innerHTML = `
+                <i class="fab fa-google-drive"></i>
+                <span>${state.gdriveFolders[folderIndex].name}</span>
+                <i class="fas fa-chevron-right" style="font-size: 10px; opacity: 0.5; margin: 0 4px;"></i>
+                <span>${file.name}</span>
+            `;
+
+            const contentArea = document.getElementById('contentArea');
+            
+            if (file.type === 'pdf') {
+                contentArea.innerHTML = `
+                    <div class="player-container">
+                        <div class="video-info">
+                            <h1 class="video-title">${file.name}</h1>
+                            <div class="video-meta">
+                                <span><i class="fas fa-file-pdf"></i> PDF Document</span>
+                                <span><i class="fab fa-google-drive"></i> Google Drive</span>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-secondary); border-radius: 16px; padding: 24px;">
+                            <iframe src="${file.url}" style="width: 100%; height: 800px; border: none; border-radius: 12px;"></iframe>
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentArea.innerHTML = createMediaPlayer(file.url, state.currentLesson);
+                initializeMediaPlayer();
+            }
+
+            const notesHtml = createNotesSection(state.currentLesson);
+            contentArea.insertAdjacentHTML('beforeend', notesHtml);
+        }
+
+        // --------------------- Media URL/Element Helpers ---------------------
+
         function processUrl(url) {
-            // Check for common embeddable/direct link services
+            // YouTube
             if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 const videoId = url.includes('youtu.be') 
                     ? url.split('/').pop().split('?')[0]
@@ -614,91 +2078,90 @@
                 return `https://www.youtube.com/embed/${videoId}`;
             }
             
+            // Google Drive
             if (url.includes('drive.google.com')) {
                 const fileId = url.match(/\/d\/([^/]+)/)?.[1] || url.match(/id=([^&]+)/)?.[1];
                 return `https://drive.google.com/file/d/${fileId}/preview`;
             }
             
+            // Dropbox
             if (url.includes('dropbox.com')) {
-                return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
+                return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
             }
 
             return url;
+        }
+
+        function extractGDriveFileId(url) {
+            const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        }
+
+        function getGDrivePreviewUrl(url, type) {
+            const fileId = extractGDriveFileId(url);
+            if (!fileId) return url;
+            // Google Drive preview works for both video and PDF shared links
+            return `https://drive.google.com/file/d/${fileId}/preview`;
         }
 
         function createMediaPlayer(url, lesson) {
             const isEmbed = url.includes('youtube.com/embed') || url.includes('drive.google.com/file');
             
             if (isEmbed) {
+                // For embedded players (YouTube, Drive, etc.), we don't control the video element, so we wrap the iframe.
                 return `
                     <div class="player-container">
-                        <div class="video-info">
-                            <h1 class="video-title">${lesson.name}</h1>
-                            <div class="video-meta">
-                                <span><i class="fas fa-globe"></i> Online Content (Embedded)</span>
-                            </div>
-                            <div class="video-actions">
-                                <span class="action-btn" style="cursor: default; opacity: 0.8;">
-                                    <i class="fas fa-info-circle"></i> Custom controls unavailable for embeds.
-                                </span>
-                            </div>
+                        <div class="video-wrapper">
+                            <iframe src="${url}" style="width: 100%; height: 100%; border: none; aspect-ratio: 16/9;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
                         </div>
-                        <div class="video-wrapper" id="videoWrapper">
-                            <div style="position: relative; width: 100%; padding-top: 56.25%;"> 
-                                <iframe 
-                                    src="${url}" 
-                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 16px;" 
-                                    allow="autoplay; fullscreen; picture-in-picture" 
-                                    allowfullscreen
-                                ></iframe>
-                            </div>
-                        </div>
+                        ${createVideoInfo(lesson)}
                     </div>
                 `;
             }
 
+            // For local files or direct links, we use the custom player with <video>/<audio> tags.
+            const tag = lesson.type === 'audio' ? 'audio' : 'video';
             return `
                 <div class="player-container">
                     <div class="video-wrapper" id="videoWrapper">
-                        <${lesson.type === 'audio' ? 'audio' : 'video'} id="videoPlayer" src="${url}" style="width: 100%; max-height: 70vh; ${lesson.type === 'audio' ? 'display: block; width: 80%; margin: 20px auto;' : ''}"></${lesson.type === 'audio' ? 'audio' : 'video'}>
-                        
+                        <${tag} id="videoPlayer" src="${url}"></${tag}>
                         <div class="video-controls" id="videoControls">
                             <div class="progress-container" id="progressContainer">
                                 <div class="buffered-bar" id="bufferedBar"></div>
                                 <div class="progress-bar" id="progressBar"></div>
                             </div>
                             <div class="controls-bottom">
-                                <button class="control-btn play-btn" id="playBtn" title="Play/Pause (Space/K)">
+                                <button class="control-btn play-btn" id="playBtn">
                                     <i class="fas fa-play"></i>
                                 </button>
-                                <button class="control-btn" id="skipBack" title="Skip Back 10s (Left Arrow/J)">
+                                <button class="control-btn" id="skipBack">
                                     <i class="fas fa-rotate-left"></i>
                                 </button>
-                                <button class="control-btn" id="skipForward" title="Skip Forward 10s (Right Arrow/L)">
+                                <button class="control-btn" id="skipForward">
                                     <i class="fas fa-rotate-right"></i>
                                 </button>
                                 <div class="volume-container">
-                                    <button class="control-btn" id="volumeBtn" title="Mute (M)">
+                                    <button class="control-btn" id="volumeBtn">
                                         <i class="fas fa-volume-up"></i>
                                     </button>
-                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100" title="Volume">
+                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100">
                                 </div>
                                 <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
                                 <div class="spacer"></div>
                                 <div class="settings-menu">
-                                    <button class="control-btn" id="settingsBtn" title="Settings">
+                                    <button class="control-btn" id="settingsBtn">
                                         <i class="fas fa-gear"></i>
                                     </button>
                                     <div class="settings-panel" id="settingsPanel">
                                         <div class="settings-item" id="speedItem">
-                                            <span>Playback Speed</span>
-                                            <span id="currentSpeed">${state.playbackSpeed === 1 ? 'Normal' : state.playbackSpeed + 'x'}</span>
+                                            <span>Speed</span>
+                                            <span id="currentSpeed">Normal</span>
                                         </div>
                                         <div class="settings-submenu" id="speedSubmenu">
                                             <div class="settings-item speed-option" data-speed="0.25">0.25x</div>
                                             <div class="settings-item speed-option" data-speed="0.5">0.5x</div>
                                             <div class="settings-item speed-option" data-speed="0.75">0.75x</div>
-                                            <div class="settings-item speed-option ${state.playbackSpeed === 1 ? 'active' : ''}" data-speed="1">Normal</div>
+                                            <div class="settings-item speed-option active" data-speed="1">Normal</div>
                                             <div class="settings-item speed-option" data-speed="1.25">1.25x</div>
                                             <div class="settings-item speed-option" data-speed="1.5">1.5x</div>
                                             <div class="settings-item speed-option" data-speed="1.75">1.75x</div>
@@ -709,7 +2172,7 @@
                                 <button class="control-btn" id="pipBtn" title="Picture in Picture">
                                     <i class="fas fa-tv"></i>
                                 </button>
-                                <button class="control-btn" id="fullscreenBtn" title="Fullscreen (F)">
+                                <button class="control-btn" id="fullscreenBtn">
                                     <i class="fas fa-expand"></i>
                                 </button>
                             </div>
@@ -727,7 +2190,8 @@
                     <div class="video-meta">
                         <span><i class="fas fa-${lesson.type === 'video' ? 'play-circle' : 'music'}"></i> ${lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)}</span>
                         <span><i class="fas fa-eye"></i> ${state.progress[lesson.path] ? Math.round(state.progress[lesson.path]) + '% completed' : 'Not started'}</span>
-                        ${lesson.source === 'url' ? `<span><i class="fas fa-globe"></i> Online Content (${lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1)})</span>` : ''}
+                        ${lesson.source === 'url' || lesson.source === 'playlist' ? '<span><i class="fas fa-globe"></i> Online Content</span>' : ''}
+                        ${lesson.source === 'gdrive' ? '<span><i class="fab fa-google-drive"></i> Google Drive</span>' : ''}
                     </div>
                     <div class="video-actions">
                         <button class="action-btn ${state.progress[lesson.path] >= 90 ? 'active' : ''}" id="markCompleteBtn">
@@ -742,6 +2206,8 @@
                 </div>
             `;
         }
+
+        // --------------------- Media Player Logic ---------------------
 
         function initializeMediaPlayer() {
             const video = document.getElementById('videoPlayer');
@@ -767,16 +2233,25 @@
             const markCompleteBtn = document.getElementById('markCompleteBtn');
             const addNoteBtn = document.getElementById('addNoteBtn');
 
-            let hideControlsTimeout;
-
             video.volume = state.volume;
             volumeSlider.value = state.volume * 100;
             video.playbackRate = state.playbackSpeed;
+
+            // Set initial speed text/option
+            const currentSpeedEl = document.getElementById('currentSpeed');
+            if(currentSpeedEl) currentSpeedEl.textContent = state.playbackSpeed === 1 ? 'Normal' : state.playbackSpeed + 'x';
+            document.querySelectorAll('.speed-option').forEach(option => {
+                option.classList.toggle('active', parseFloat(option.dataset.speed) === state.playbackSpeed);
+            });
             updateVolumeIcon();
+
 
             if (state.progress[state.currentLesson.path]) {
                 video.addEventListener('loadedmetadata', () => {
-                    video.currentTime = (state.progress[state.currentLesson.path] / 100) * video.duration;
+                    const seekTime = (state.progress[state.currentLesson.path] / 100) * video.duration;
+                    if (seekTime > 5) { 
+                        video.currentTime = seekTime;
+                    }
                 });
             }
 
@@ -802,9 +2277,8 @@
                 timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
                 
                 state.progress[state.currentLesson.path] = progress;
-                // Save progress every 5% change or when paused/stopped
-                if (Math.floor(progress) % 5 === 0) {
-                     state.save();
+                if (Math.floor(video.currentTime) % 5 === 0) { 
+                    state.save();
                 }
 
                 if (progress >= 90 && markCompleteBtn && !markCompleteBtn.classList.contains('active')) {
@@ -846,7 +2320,7 @@
                 } else if (video.volume < 0.5) {
                     icon.className = 'fas fa-volume-low';
                 } else {
-                    icon.className = 'fas fa-volume-high';
+                    icon.className = 'fas fa-volume-up';
                 }
             }
 
@@ -883,16 +2357,20 @@
                         await video.requestPictureInPicture();
                     }
                 } catch (err) {
-                    console.log('PIP not supported or failed to request:', err);
+                    console.log('PIP not supported', err);
                 }
             };
 
-            // Fix Fullscreen logic
             fullscreenBtn.onclick = () => {
                 if (!document.fullscreenElement) {
-                    videoWrapper.requestFullscreen().catch(err => {
-                           console.error("Error attempting to switch to fullscreen mode: ", err);
-                    });
+                    // Use vendor prefixes for widest support on the wrapper
+                    if (videoWrapper.requestFullscreen) {
+                        videoWrapper.requestFullscreen();
+                    } else if (videoWrapper.webkitRequestFullscreen) {
+                        videoWrapper.webkitRequestFullscreen();
+                    } else if (videoWrapper.msRequestFullscreen) {
+                        videoWrapper.msRequestFullscreen();
+                    }
                 } else {
                     document.exitFullscreen();
                 }
@@ -901,43 +2379,56 @@
             document.onfullscreenchange = () => {
                 const icon = fullscreenBtn.querySelector('i');
                 icon.className = document.fullscreenElement ? 'fas fa-compress' : 'fas fa-expand';
-            };
-
-            // Control hiding logic
-            videoWrapper.onmousemove = () => {
-                controls.classList.add('show');
-                clearTimeout(hideControlsTimeout);
-                hideControlsTimeout = setTimeout(() => {
-                    if (!video.paused && !settingsPanel.classList.contains('active')) {
-                        controls.classList.remove('show');
-                    }
-                }, 3000);
-            };
-
-            videoWrapper.onmouseleave = () => {
-                if (!video.paused) {
-                    controls.classList.remove('show');
+                
+                if (document.fullscreenElement) {
+                    videoWrapper.classList.add('fullscreen');
+                } else {
+                    videoWrapper.classList.remove('fullscreen');
                 }
             };
 
-            video.onplay = () => {
-                hideControlsTimeout = setTimeout(() => {
+            let inactivityTimeout;
+            let mouseActivityTimeout;
+            const hideDelay = 3000;
+
+            const resetControlTimer = () => {
+                controls.classList.add('show');
+                videoWrapper.classList.remove('paused');
+                
+                clearTimeout(mouseActivityTimeout);
+                clearTimeout(inactivityTimeout);
+                
+                if (!video.paused) {
+                    // Start timer to hide controls after delay
+                    inactivityTimeout = setTimeout(() => {
+                        controls.classList.remove('show');
+                    }, hideDelay);
+                }
+            }
+
+            videoWrapper.onmousemove = resetControlTimer;
+            controls.onmousemove = resetControlTimer; // Keep controls visible if mouse is over controls
+
+            videoWrapper.onmouseleave = () => {
+                // Keep controls hidden if playing, otherwise leave them visible
+                if (!video.paused) {
                     controls.classList.remove('show');
-                }, 3000);
+                }
+                clearTimeout(inactivityTimeout);
+                clearTimeout(mouseActivityTimeout);
+            };
+
+            video.onplay = () => {
+                videoWrapper.classList.remove('paused');
+                resetControlTimer();
             };
 
             video.onpause = () => {
+                videoWrapper.classList.add('paused');
                 controls.classList.add('show');
-                clearTimeout(hideControlsTimeout);
-                state.save(); // Save progress immediately on pause
+                clearTimeout(inactivityTimeout);
+                clearTimeout(mouseActivityTimeout);
             };
-            
-            video.onended = () => {
-                video.pause();
-                playBtn.innerHTML = '<i class="fas fa-redo"></i>'; // Change icon to replay
-                state.progress[state.currentLesson.path] = 100; // Ensure 100% completion is saved
-                state.save();
-            }
 
             if (markCompleteBtn) {
                 markCompleteBtn.onclick = () => {
@@ -946,10 +2437,8 @@
                     markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
                     markCompleteBtn.classList.add('active');
                     
-                    // Update sidebar item immediately
                     document.querySelectorAll('.lesson-item').forEach(el => {
-                        // Crude matching by text content, but effective for this structure
-                        if (el.textContent.includes(state.currentLesson.name) && !el.classList.contains('completed')) {
+                        if (el.textContent.includes(state.currentLesson.name)) {
                             el.classList.add('completed');
                             el.querySelector('i').className = 'fas fa-check-circle';
                         }
@@ -968,67 +2457,75 @@
             }
 
             document.onkeydown = (e) => {
-                if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+                if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.id === 'searchInput') return;
 
                 switch(e.key) {
                     case ' ':
                     case 'k':
                         e.preventDefault();
-                        if (video) togglePlay();
+                        togglePlay();
+                        resetControlTimer();
                         break;
                     case 'ArrowLeft':
                     case 'j':
                         e.preventDefault();
-                        if (video) video.currentTime -= 5;
+                        video.currentTime = Math.max(0, video.currentTime - 5);
+                        resetControlTimer();
                         break;
                     case 'ArrowRight':
                     case 'l':
                         e.preventDefault();
-                        if (video) video.currentTime += 5;
+                        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+                        resetControlTimer();
                         break;
                     case 'ArrowUp':
                         e.preventDefault();
-                        if (video) {
-                            video.volume = Math.min(1, video.volume + 0.1);
-                            volumeSlider.value = video.volume * 100;
-                            state.volume = video.volume;
-                            state.save();
-                            updateVolumeIcon();
-                        }
+                        video.volume = Math.min(1, video.volume + 0.1);
+                        volumeSlider.value = video.volume * 100;
+                        state.volume = video.volume;
+                        state.save();
+                        updateVolumeIcon();
                         break;
                     case 'ArrowDown':
                         e.preventDefault();
-                        if (video) {
-                            video.volume = Math.max(0, video.volume - 0.1);
-                            volumeSlider.value = video.volume * 100;
-                            state.volume = video.volume;
-                            state.save();
-                            updateVolumeIcon();
-                        }
+                        video.volume = Math.max(0, video.volume - 0.1);
+                        volumeSlider.value = video.volume * 100;
+                        state.volume = video.volume;
+                        state.save();
+                        updateVolumeIcon();
                         break;
                     case 'f':
                         e.preventDefault();
-                        if (video) fullscreenBtn.click();
+                        fullscreenBtn.click();
                         break;
                     case 'm':
                         e.preventDefault();
-                        if (video) volumeBtn.click();
+                        volumeBtn.click();
                         break;
-                    case '0': case '1': case '2': case '3': case '4': 
-                    case '5': case '6': case '7': case '8': case '9':
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
                         e.preventDefault();
-                        if (video) video.currentTime = (parseInt(e.key) / 10) * video.duration;
+                        video.currentTime = (parseInt(e.key) / 10) * video.duration;
+                        resetControlTimer();
                         break;
                 }
             };
 
-            document.onclick = (e) => {
-                if (settingsPanel && !settingsPanel.contains(e.target) && settingsBtn !== e.target && !settingsBtn.contains(e.target)) {
-                    settingsPanel.classList.remove('active');
-                    speedSubmenu.classList.remove('active');
-                }
+            document.onclick = () => {
+                settingsPanel.classList.remove('active');
+                speedSubmenu.classList.remove('active');
             };
         }
+
+        // --------------------- Notes Functions ---------------------
 
         function createNotesSection(lesson) {
             const notes = state.notes[lesson.path] || [];
@@ -1051,7 +2548,7 @@
                         </div>
                         <div class="notes-list" id="notesList">
                             ${notes.length === 0 ? '<div style="text-align: center; color: var(--text-secondary); font-size: 14px; padding: 40px 20px;"><i class="fas fa-lightbulb" style="font-size: 48px; display: block; margin-bottom: 16px; opacity: 0.3;"></i>No notes yet. Start taking notes to enhance your learning!</div>' : ''}
-                            ${notes.sort((a,b) => b.timestampSeconds - a.timestampSeconds).map((note, index) => `
+                            ${notes.map((note, index) => `
                                 <div class="note-item">
                                     <div class="note-header">
                                         ${note.timestamp ? `
@@ -1104,40 +2601,29 @@
             state.save();
             clearNoteInput();
             
-            const notesSection = document.querySelector('.notes-section');
-            if (notesSection) {
-                notesSection.outerHTML = createNotesSection(state.currentLesson);
+            const notesSectionContainer = document.querySelector('.notes-section').parentNode;
+            if (notesSectionContainer) {
+                notesSectionContainer.innerHTML = createNotesSection(state.currentLesson);
             }
         }
 
-        // Replaced native confirm()
         function deleteNote(index) {
-            if (!state.currentLesson) return;
+            if (!state.currentLesson || !confirm('Delete this note?')) return;
             
-            showMessageModal({
-                title: 'Delete Note',
-                message: 'Are you sure you want to permanently delete this note?',
-                iconClass: 'fa-trash',
-                isConfirm: true,
-                onConfirm: (confirmed) => {
-                    if (confirmed) {
-                        state.notes[state.currentLesson.path].splice(index, 1);
-                        state.save();
-                        
-                        const notesSection = document.querySelector('.notes-section');
-                        if (notesSection) {
-                            notesSection.outerHTML = createNotesSection(state.currentLesson);
-                        }
-                    }
-                }
-            });
+            state.notes[state.currentLesson.path].splice(index, 1);
+            state.save();
+            
+            const notesSectionContainer = document.querySelector('.notes-section').parentNode;
+            if (notesSectionContainer) {
+                notesSectionContainer.innerHTML = createNotesSection(state.currentLesson);
+            }
         }
 
         function jumpToTimestamp(timestamp) {
             const video = document.getElementById('videoPlayer');
             if (!video || !timestamp || timestamp === 'General Note') return;
             
-            const note = (state.notes[state.currentLesson.path] || []).find(n => n.timestamp === timestamp);
+            const note = state.notes[state.currentLesson.path].find(n => n.timestamp === timestamp);
             if (note && note.timestampSeconds) {
                 video.currentTime = note.timestampSeconds;
                 video.play();
@@ -1167,27 +2653,33 @@
 
                 lessons.forEach(lesson => {
                     const lessonName = lesson.textContent.toLowerCase();
-                    const lessonContainer = lesson.closest('.lesson-list');
                     if (lessonName.includes(query)) {
                         lesson.style.display = 'flex';
                         hasMatch = true;
-                        if (query) {
-                             lessonContainer?.classList.add('expanded');
-                             lessonContainer?.previousElementSibling?.querySelector('.course-expand')?.classList.add('expanded');
-                        }
                     } else {
                         lesson.style.display = query ? 'none' : 'flex';
                     }
                 });
 
+                const lessonList = item.querySelector('.lesson-list');
+                const expandIcon = item.querySelector('.course-expand');
+                if (lessonList && expandIcon) {
+                    if (query && Array.from(lessons).some(l => l.style.display === 'flex')) {
+                        lessonList.classList.add('expanded');
+                        expandIcon.classList.add('expanded');
+                    }
+                }
+
                 item.style.display = hasMatch ? 'block' : 'none';
             });
         }
 
-        // --- URL Modal Functions ---
+        // --------------------- Modal Helper Functions ---------------------
+
         function openUrlModal() {
             document.getElementById('urlModal').classList.add('active');
             document.getElementById('courseTitle').focus();
+            document.getElementById('overlay').classList.add('active');
         }
 
         function closeUrlModal() {
@@ -1195,7 +2687,38 @@
             document.getElementById('courseTitle').value = '';
             document.getElementById('courseUrl').value = '';
             document.getElementById('courseCategory').value = '';
+            document.getElementById('overlay').classList.remove('active');
         }
+
+        function openPlaylistModal() {
+            document.getElementById('playlistModal').classList.add('active');
+            document.getElementById('playlistName').focus();
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        function closePlaylistModal() {
+            document.getElementById('playlistModal').classList.remove('active');
+            document.getElementById('playlistName').value = '';
+            document.getElementById('playlistUrls').value = '';
+            document.getElementById('playlistCategory').value = '';
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function openGDriveModal() {
+            document.getElementById('gdriveModal').classList.add('active');
+            document.getElementById('gdriveFolderName').focus();
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        function closeGDriveModal() {
+            document.getElementById('gdriveModal').classList.remove('active');
+            document.getElementById('gdriveFolderName').value = '';
+            document.getElementById('gdriveFolderUrl').value = '';
+            document.getElementById('gdriveCategory').value = '';
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        // --------------------- Add/Delete Content Functions ---------------------
 
         function addUrlCourse() {
             const title = document.getElementById('courseTitle').value.trim();
@@ -1203,20 +2726,14 @@
             const category = document.getElementById('courseCategory').value.trim();
 
             if (!title || !url) {
-                // Replaced native alert()
-                showMessageModal({
-                    title: 'Input Required',
-                    message: 'Please enter both a course title and a valid media URL.',
-                    iconClass: 'fa-exclamation-circle'
-                });
+                alert('Please enter both title and URL');
                 return;
             }
-            
-            // As requested, this remains a single media item addition
+
             state.urlCourses.push({
                 title: title,
                 url: url,
-                category: category || 'Online Content',
+                category: category || 'Online Course',
                 addedDate: new Date().toISOString()
             });
 
@@ -1226,74 +2743,171 @@
             renderUrlCourses();
         }
 
-        // Replaced native confirm()
-        function deleteUrlCourse(index) {
-            showMessageModal({
-                title: 'Remove Course',
-                message: 'Are you sure you want to remove this URL course from your list? This action cannot be undone.',
-                iconClass: 'fa-trash',
-                isConfirm: true,
-                onConfirm: (confirmed) => {
-                    if (confirmed) {
-                        state.urlCourses.splice(index, 1);
-                        state.save();
-                        renderUrlCourses();
-                    }
-                }
-            });
-        }
+        function addPlaylist() {
+            const name = document.getElementById('playlistName').value.trim();
+            const urlsText = document.getElementById('playlistUrls').value.trim();
+            const category = document.getElementById('playlistCategory').value.trim();
 
-        // --- Generic Message/Confirmation Modal Functions ---
-        function showMessageModal({ title, message, iconClass, isConfirm = false, onConfirm }) {
-            const modal = document.getElementById('messageModal');
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
-            
-            const icon = document.getElementById('modalIcon');
-            icon.className = `fas ${iconClass}`;
-            icon.style.color = iconClass.includes('trash') ? '#ff4444' : 'var(--accent-color)';
-
-            const confirmBtn = document.getElementById('modalConfirmBtn');
-            const cancelBtn = document.getElementById('modalCancelBtn');
-
-            if (isConfirm) {
-                cancelBtn.style.display = 'inline-flex';
-                confirmBtn.textContent = 'Yes, Delete';
-                confirmBtn.onclick = () => {
-                    hideMessageModal();
-                    if (onConfirm) onConfirm(true);
-                };
-                cancelBtn.onclick = () => {
-                    hideMessageModal();
-                    if (onConfirm) onConfirm(false);
-                };
-            } else {
-                // Alert mode
-                cancelBtn.style.display = 'none';
-                confirmBtn.textContent = 'Close';
-                confirmBtn.onclick = hideMessageModal;
+            if (!name || !urlsText) {
+                alert('Please enter playlist name and at least one video URL');
+                return;
             }
 
-            modal.classList.add('active');
+            const urls = urlsText.split('\n').filter(url => url.trim());
+            
+            if (urls.length === 0) {
+                alert('Please add at least one video URL');
+                return;
+            }
+
+            const videos = urls.map((url, index) => {
+                const cleanUrl = url.trim();
+                let title = `Video ${index + 1}`;
+                
+                try {
+                    const urlObj = new URL(cleanUrl.split('?')[0]); 
+                    const filename = urlObj.pathname.split('/').pop();
+                    if (filename && filename.length > 3) {
+                        title = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
+                        if (title.length > 50) title = title.substring(0, 47) + '...';
+                    }
+                } catch (e) {
+                    // Ignore URL parsing errors and keep default title
+                }
+
+                return {
+                    title: title,
+                    url: cleanUrl
+                };
+            });
+
+            state.playlists.push({
+                name: name,
+                category: category || 'Playlist',
+                videos: videos,
+                createdDate: new Date().toISOString()
+            });
+
+            state.save();
+            closePlaylistModal();
+            switchSource('playlist');
+            renderPlaylists();
         }
 
-        function hideMessageModal() {
-            document.getElementById('messageModal').classList.remove('active');
+        function addGDriveFolder() {
+            const name = document.getElementById('gdriveFolderName').value.trim();
+            const url = document.getElementById('gdriveFolderUrl').value.trim();
+            const category = document.getElementById('gdriveCategory').value.trim();
+
+            if (!name || !url) {
+                alert('Please enter folder name and URL');
+                return;
+            }
+
+            if (!url.includes('drive.google.com')) {
+                alert('Please enter a valid Google Drive URL');
+                return;
+            }
+
+            // Manual File Entry Simulation (as API integration is complex)
+            const filesInput = prompt(
+                `To proceed, please manually enter the file links from the Google Drive folder, one per line.\n\n` +
+                `Format: [File Name] [File URL]\n` +
+                `Example:\nLesson 1.mp4 https://drive.google.com/file/d/FILE_ID/view\nLesson 2.pdf https://drive.google.com/file/d/FILE_ID_2/view`
+            );
+
+            if (filesInput === null || filesInput.trim() === '') {
+                alert('Folder creation cancelled or no files added.');
+                return;
+            }
+            
+            const files = filesInput.split('\n').map(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.length === 0) return null;
+
+                const parts = trimmedLine.split(/\s+/);
+                const url = parts.pop();
+                const name = parts.join(' ').trim() || `File ${new Date().getTime()}`;
+
+                let type = 'video';
+                if (name.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('.pdf')) {
+                    type = 'pdf';
+                } else if (name.toLowerCase().endsWith('.mp3') || url.toLowerCase().includes('.mp3')) {
+                    type = 'audio';
+                }
+
+                return { 
+                    name: name.replace(/\.[^/.]+$/, ""), 
+                    url: getGDrivePreviewUrl(url, type), 
+                    type, 
+                    source: 'gdrive' 
+                };
+            }).filter(f => f);
+
+            state.gdriveFolders.push({
+                name: name,
+                url: url,
+                category: category || 'Google Drive',
+                files: files,
+                addedDate: new Date().toISOString()
+            });
+
+            state.save();
+            closeGDriveModal();
+            switchSource('gdrive');
+            renderGDriveFolders();
         }
 
-        // Check for File System API support
+        function deleteUrlCourse(index) {
+            if (!confirm('Remove this course?')) return;
+            
+            const url = state.urlCourses[index].url;
+            delete state.progress[url];
+            delete state.notes[url];
+
+            state.urlCourses.splice(index, 1);
+            state.save();
+            renderUrlCourses();
+        }
+
+        function deletePlaylist(index) {
+            if (!confirm('Delete this playlist and all its videos?')) return;
+            
+            state.playlists[index].videos.forEach(video => {
+                delete state.progress[video.url];
+                delete state.notes[video.url];
+            });
+
+            state.playlists.splice(index, 1);
+            state.save();
+            renderPlaylists();
+        }
+
+        function deleteGDriveFolder(index) {
+            if (!confirm('Delete this Google Drive folder from your list?')) return;
+            
+            state.gdriveFolders[index].files.forEach(file => {
+                delete state.progress[file.url];
+                delete state.notes[file.url];
+            });
+
+            state.gdriveFolders.splice(index, 1);
+            state.save();
+            renderGDriveFolders();
+        }
+
+        // --------------------- Fallbacks ---------------------
         if (!window.showDirectoryPicker) {
-            document.getElementById('loadFolderBtn').disabled = true;
-            document.getElementById('loadFolderBtn').title = 'File System API not supported in this browser. Use Chrome/Edge.';
-            document.querySelector('.welcome-actions button:first-child').disabled = true;
-            document.querySelector('.welcome-actions button:first-child').title = 'File System API not supported in this browser. Use Chrome/Edge.';
+            const loadBtn = document.getElementById('loadFolderBtn');
+            loadBtn.disabled = true;
+            loadBtn.title = 'File System Access API is not supported in this browser. Please use Chrome or Edge.';
         }
 
-        // Close modals on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeUrlModal();
-                hideMessageModal();
+                closePlaylistModal();
+                closeGDriveModal();
                 closeSidebar();
             }
         });
