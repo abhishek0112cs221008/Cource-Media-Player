@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Player - Study Hub</title>
+    <title>Study</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="logo.png">
     <style>
         * {
             margin: 0;
@@ -126,9 +127,10 @@
 
         .logo i {
             background: linear-gradient(135deg, var(--accent-color), #667eea);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
+              -webkit-background-clip: text;
+              background-clip: text;
+              -webkit-text-fill-color: transparent;
+              font-size: 28px;
         }
 
         .search-box {
@@ -1228,7 +1230,30 @@
 
         .overlay.active {
             display: block;
+        }  
+
+        .logo-apple-style {
+        display: flex;
+        align-items: center;
+        /* gap: 10px; */
+        font-family: 'SF Pro Display', 'Myriad Pro', 'Helvetica Neue', sans-serif;
+        font-weight: 600;
+        font-size: 24px;
+        color: #111;
+        letter-spacing: 0.2px;
         }
+
+        .logo-apple-style img {
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .logo-apple-style span {
+        background: linear-gradient(90deg, #FF2D55, #BF5AF2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        }
+
+
     </style>
 </head>
 <body>
@@ -1240,10 +1265,12 @@
                 <button class="sidebar-close" id="sidebarClose">
                     <i class="fas fa-times"></i>
                 </button>
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>My Courses</span>
+            
+                <div class="logo-apple-style">
+                    <img src="logo.png" alt="Study Icon" height="46">
+                    <span>Study</span>
                 </div>
+
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search courses & lessons...">
                     <i class="fas fa-search"></i>
