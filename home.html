@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Player Overview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --black: #000;
+            --airbnb-red: #FF5A5F;
+            --white: #fff;
+        }
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(0,0,0,0.85);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            padding: 2.5rem 2rem;
+            max-width: 480px;
+            text-align: center;
+            animation: fadeIn 1.2s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        h1 {
+            color: var(--airbnb-red);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            font-weight: 700;
+            animation: popIn 1s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0;}
+            80% { transform: scale(1.1);}
+            100% { transform: scale(1); opacity: 1;}
+        }
+        .folder-structure {
+            margin: 2rem 0 1.5rem 0;
+            text-align: left;
+            display: inline-block;
+            background: rgba(255,90,95,0.08);
+            border-left: 4px solid var(--airbnb-red);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-family: 'Fira Mono', 'Consolas', monospace;
+            color: var(--white);
+            font-size: 1rem;
+            animation: slideIn 1.2s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-40px);}
+            to { opacity: 1; transform: translateX(0);}
+        }
+        .highlight {
+            color: var(--airbnb-red);
+            font-weight: bold;
+        }
+        .desc {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+        .pulse {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: var(--airbnb-red);
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+            vertical-align: middle;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,90,95,0.7);}
+            70% { box-shadow: 0 0 0 12px rgba(255,90,95,0);}
+            100% { box-shadow: 0 0 0 0 rgba(255,90,95,0);}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="pulse"></span>
+        <h1>Course Player Overview</h1>
+        <div class="desc">
+            Welcome to your local <span class="highlight">Course Player</span>! This website helps you easily read, listen, and watch your course materials directly from your folders. Enjoy a seamless experience with a clean, modern interface.
+        </div>
+        <div class="folder-structure">
+            mainfolder/<br>
+            &nbsp;&nbsp;├── <span class="highlight">subfolder1</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── audios..<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── vedios..<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── pdfs..<br>
+            &nbsp;&nbsp;└── subfolder2<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── audios..<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── vedios..<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── pdfs..<br>
+        </div>
+        <div class="desc">
+            <span class="highlight">Just organize your files</span> as shown above and start learning!
+        </div>
+    </div>
+</body>
+</html>
